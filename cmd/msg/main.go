@@ -31,6 +31,24 @@ func (MsgExecutor) Metadata(context.Context) (api.MetadataOutput, error) {
 	}, nil
 }
 
+// Simulate execution without showing the command
+func (e *MsgExecutor) runBotkubeCommand(ctx context.Context, cmd string) (string, error) {
+    // Create input for Botkube's internal executor
+    input := executor.ExecuteInput{
+        Command: cmd,
+        // You can set other input fields if needed, like context
+    }
+
+    // Call the same Botkube logic that normally runs when a button is clicked
+    output, err := e.Execute(ctx, input)
+    if err != nil {
+        return "", err
+    }
+
+    // Extract and return the result from Botkube's response
+    return output.Message.Plaintext, nil
+}
+
 // Execute returns a given command as a response.
 func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (executor.ExecuteOutput, error) {
 	if !in.Context.IsInteractivitySupported {
@@ -59,18 +77,6 @@ func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exec
 		// Store the selection from the second dropdown and show the button
 		e.state[sessionID]["second"] = value
 		return showBothSelects(e.state[sessionID]["first"], e.state[sessionID]["second"]), nil
-	case "run_command":
-		// Handle the command execution after both selections
-		first := e.state[sessionID]["first"]
-		second := e.state[sessionID]["second"]
-		if first != "" && second != "" {
-			return executor.ExecuteOutput{
-				Message: api.NewCodeBlockMessage(fmt.Sprintf("Running command with: First = %s, Second = %s", first, second), true),
-			}, nil
-		}
-		return executor.ExecuteOutput{
-			Message: api.NewCodeBlockMessage("Both selections must be made before running the command.", true),
-		}, nil
 	}
 
 	if strings.TrimSpace(in.Command) == pluginName {
@@ -188,16 +194,23 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 
 	// Only add the button if both selections are made
 	if firstSelection != "" && secondSelection != "" {
+
+		result, err := e.runBotkubeCommand(ctx, "kubectl get po botkube-6c7d9cb8cd-768nv -n botkube --ignore-not-found=true -o go-template='{{.metadata.name}}'")
+		if err != nil {
+			return executor.ExecuteOutput{
+				Message: api.NewCodeBlockMessage("Failed to run internal command", true),
+			}, nil
+		}
+
 		code := fmt.Sprintf("kubectl get %s -n %s", firstSelection, secondSelection)
 		sections = append(sections, api.Section{
 			Base: api.Base{
 				Body: api.Body{
-					CodeBlock: code,
+					CodeBlock: result,
 				},
 			},
 			Buttons: []api.Button{
-				btnBuilder.ForCommandWithDescCmd("Run command", code, api.ButtonStylePrimary),
-
+				btnBuilder.ForCommandWithoutDesc("Run command", code, api.ButtonStylePrimary),
 			},
 		})
 	}
