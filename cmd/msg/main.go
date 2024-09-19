@@ -55,11 +55,6 @@ func initialMessages() executor.ExecuteOutput {
 		return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
 	}
 
-	return executor.ExecuteOutput{
-		Message: api.Message{
-			BaseBody: api.Body{
-				Plaintext: "Showcases interactive message capabilities",
-			},
 	// Define a list of jobs
 	jobs := []api.OptionItem{
 		{Name: "Job1", Value: "job1"},
@@ -89,7 +84,7 @@ func initialMessages() executor.ExecuteOutput {
 								Command: cmdPrefix("select job"),
 								OptionGroups: []api.OptionGroup{
 									{
-										Name: "Jobs",
+										Name:    "Jobs",
 										Options: jobs,
 									},
 								},
@@ -107,7 +102,7 @@ func initialMessages() executor.ExecuteOutput {
 								Command: cmdPrefix("select param"),
 								OptionGroups: []api.OptionGroup{
 									{
-										Name: "Parameters",
+										Name:    "Parameters",
 										Options: params,
 									},
 								},
@@ -126,7 +121,6 @@ func initialMessages() executor.ExecuteOutput {
 					},
 				},
 			},
-
 			OnlyVisibleForYou: true,
 			ReplaceOriginal:   false,
 		},
