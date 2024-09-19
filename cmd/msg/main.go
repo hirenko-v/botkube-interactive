@@ -190,12 +190,7 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 	if firstSelection != "" && secondSelection != "" {
 		sections = append(sections, api.Section{
 			Buttons: []api.Button{
-				{
-					Name:    "Run command",
-					Command: cmdPrefix("run_command"),
-					Style:   api.ButtonStylePrimary, // Optional: Make the button more prominent
-				},
-				btnBuilder.ForCommandWithDescCmd("Run act2", fmt.Sprintf("kubectl get %s buttons act2", firstSelection), api.ButtonStylePrimary),
+				btnBuilder.ForCommandWithDescCmd("Run command", fmt.Sprintf("kubectl get %s -n %s", firstSelection, secondSelection), api.ButtonStylePrimary),
 
 			},
 		})
