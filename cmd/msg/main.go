@@ -42,7 +42,7 @@ func (MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (executo
 	if len(commandParts) > 2 && commandParts[1] == "selects" {
 		switch commandParts[2] {
 		case "first":
-			// User selected the first option, now show both selects
+			// User selected the first option, now show both selects side by side
 			return showBothSelects(), nil
 		case "second":
 			// User selected the second option, respond accordingly
@@ -115,45 +115,49 @@ func showBothSelects() executor.ExecuteOutput {
 			},
 			Sections: []api.Section{
 				{
-					Selects: api.Selects{
-						ID: "select-id-1",
-						Items: []api.Select{
-							{
-								Name:    "first",
-								Command: cmdPrefix("selects first"),
-								OptionGroups: []api.OptionGroup{
+					Columns: []api.Column{ // Use columns to layout dropdowns side by side
+						{
+							Selects: api.Selects{
+								ID: "select-id-1",
+								Items: []api.Select{
 									{
-										Name: "Group 1",
-										Options: []api.OptionItem{
-											{Name: "BAR", Value: "BAR"},
-											{Name: "BAZ", Value: "BAZ"},
-											{Name: "XYZ", Value: "XYZ"},
+										Name:    "first",
+										Command: cmdPrefix("selects first"),
+										OptionGroups: []api.OptionGroup{
+											{
+												Name: "Group 1",
+												Options: []api.OptionItem{
+													{Name: "BAR", Value: "BAR"},
+													{Name: "BAZ", Value: "BAZ"},
+													{Name: "XYZ", Value: "XYZ"},
+												},
+											},
 										},
 									},
 								},
 							},
 						},
-					},
-				},
-				{
-					Selects: api.Selects{
-						ID: "select-id-2",
-						Items: []api.Select{
-							{
-								Name:    "second",
-								Command: cmdPrefix("selects second"),
-								OptionGroups: []api.OptionGroup{
+						{
+							Selects: api.Selects{
+								ID: "select-id-2",
+								Items: []api.Select{
 									{
-										Name: "Second Group",
-										Options: []api.OptionItem{
-											{Name: "Option A", Value: "Option A"},
-											{Name: "Option B", Value: "Option B"},
+										Name:    "second",
+										Command: cmdPrefix("selects second"),
+										OptionGroups: []api.OptionGroup{
+											{
+												Name: "Second Group",
+												Options: []api.OptionItem{
+													{Name: "Option A", Value: "Option A"},
+													{Name: "Option B", Value: "Option B"},
+												},
+											},
+										},
+										InitialOption: &api.OptionItem{
+											Name:  "Option A",
+											Value: "Option A",
 										},
 									},
-								},
-								InitialOption: &api.OptionItem{
-									Name:  "Option A",
-									Value: "Option A",
 								},
 							},
 						},
