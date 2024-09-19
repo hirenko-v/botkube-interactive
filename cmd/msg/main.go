@@ -39,7 +39,6 @@ func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exec
 		}, nil
 	}
 
-	// Assume `in.Command` contains the action and value in a structured format
 	action, value := parseCommand(in.Command)
 
 	// Use a generic key for simplicity; adapt if needed
@@ -52,14 +51,15 @@ func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exec
 
 	switch action {
 	case "select_first":
-		// Store the selection from the first dropdown
 		e.state[sessionID]["first"] = value
-		return showBothSelects(e.state[sessionID]["first"]), nil
+		return updateDropdowns(e.state[sessionID]), nil
 	case "select_second":
-		// Store the selection from the second dropdown and respond
 		e.state[sessionID]["second"] = value
+		return updateDropdowns(e.state[sessionID]), nil
+	case "run_command":
+		// Execute the command or handle it
 		return executor.ExecuteOutput{
-			Message: api.NewCodeBlockMessage(fmt.Sprintf("You selected:\nFirst Dropdown: %s\nSecond Dropdown: %s", e.state[sessionID]["first"], e.state[sessionID]["second"]), true),
+			Message: api.NewCodeBlockMessage(fmt.Sprintf("Executing command:\n%s", e.state[sessionID]["full_command"]), true),
 		}, nil
 	}
 
@@ -123,16 +123,17 @@ func initialMessages() executor.ExecuteOutput {
 	}
 }
 
-// showBothSelects displays the second dropdown after the first one is selected.
-func showBothSelects(firstSelection string) executor.ExecuteOutput {
+// updateDropdowns displays the updated dropdowns and command preview.
+func updateDropdowns(selections map[string]string) executor.ExecuteOutput {
 	cmdPrefix := func(cmd string) string {
 		return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
 	}
 
+	fullCommand := buildFullCommand(selections)
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: "You've selected from the first dropdown. Now select from the second dropdown.",
+				Plaintext: "Please review your selections and press 'Run command' to execute.",
 			},
 			Sections: []api.Section{
 				{
@@ -153,8 +154,8 @@ func showBothSelects(firstSelection string) executor.ExecuteOutput {
 									},
 								},
 								InitialOption: &api.OptionItem{
-									Name:  firstSelection,
-									Value: firstSelection,
+									Name:  selections["first"],
+									Value: selections["first"],
 								},
 							},
 							{
@@ -170,10 +171,24 @@ func showBothSelects(firstSelection string) executor.ExecuteOutput {
 									},
 								},
 								InitialOption: &api.OptionItem{
-									Name:  "Option A",
-									Value: "Option A",
+									Name:  selections["second"],
+									Value: selections["second"],
 								},
 							},
+						},
+					},
+				},
+				{
+					// Text message with the command to be executed
+					Plaintext: fullCommand,
+				},
+				{
+					// Button to run the command
+					Actions: []api.Action{
+						{
+							Type:    "button",
+							Name:    "Run command",
+							Command: fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, "run_command"),
 						},
 					},
 				},
@@ -182,6 +197,18 @@ func showBothSelects(firstSelection string) executor.ExecuteOutput {
 			ReplaceOriginal:   true,
 		},
 	}
+}
+
+// buildFullCommand constructs the full command string from selections
+func buildFullCommand(selections map[string]string) string {
+	cmd := "Command to execute:"
+	if first, ok := selections["first"]; ok {
+		cmd += fmt.Sprintf(" First Dropdown: %s", first)
+	}
+	if second, ok := selections["second"]; ok {
+		cmd += fmt.Sprintf(" Second Dropdown: %s", second)
+	}
+	return cmd
 }
 
 func (MsgExecutor) Help(context.Context) (api.Message, error) {
