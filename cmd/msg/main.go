@@ -19,7 +19,10 @@ const (
 var version = "dev"
 
 // MsgExecutor implements the Botkube executor plugin interface.
-type MsgExecutor struct{}
+type MsgExecutor struct {
+	selectedJob  string
+	selectedParam string
+}
 
 // Metadata returns details about the Msg plugin.
 func (MsgExecutor) Metadata(context.Context) (api.MetadataOutput, error) {
@@ -29,43 +32,46 @@ func (MsgExecutor) Metadata(context.Context) (api.MetadataOutput, error) {
 	}, nil
 }
 
-// Execute returns a given command as a response.
-func (MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (executor.ExecuteOutput, error) {
+// Execute handles the command execution logic.
+func (m *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (executor.ExecuteOutput, error) {
 	if !in.Context.IsInteractivitySupported {
 		return executor.ExecuteOutput{
 			Message: api.NewCodeBlockMessage("Interactivity for this platform is not supported", true),
 		}, nil
 	}
 
-	// Handle the initial command, show job selection
+	// Initial command to show job selection
 	if strings.TrimSpace(in.Command) == pluginName {
-		return initialJobSelection(), nil
+		return m.initialJobSelection(), nil
 	}
 
 	// Handle job selection
 	if strings.HasPrefix(in.Command, "select job") {
-		job := strings.TrimPrefix(in.Command, "select job ")
-		return showParametersForJob(job), nil
+		m.selectedJob = strings.TrimPrefix(in.Command, "select job ")
+		return m.showParametersForJob(), nil
 	}
 
-	// Handle button click (final execution) after both job and param selection
+	// Handle parameter selection
+	if strings.HasPrefix(in.Command, "select param") {
+		m.selectedParam = strings.TrimPrefix(in.Command, "select param ")
+		return m.showRunButton(), nil
+	}
+
+	// Handle final execution of the command
 	if strings.HasPrefix(in.Command, "run job") {
-		parts := strings.Split(in.Command, " ")
-		if len(parts) < 4 {
+		if m.selectedJob == "" || m.selectedParam == "" {
 			return executor.ExecuteOutput{
 				Message: api.NewCodeBlockMessage("Error: Job or parameter missing", true),
 			}, nil
 		}
-		job := parts[2]
-		param := parts[3]
 
-		// Final command execution with job and parameter
+		// Execute final kubectl run command
 		return executor.ExecuteOutput{
-			Message: api.NewCodeBlockMessage(fmt.Sprintf("Executing: kubectl run %s %s", job, param), true),
+			Message: api.NewCodeBlockMessage(fmt.Sprintf("Executing: kubectl run %s %s", m.selectedJob, m.selectedParam), true),
 		}, nil
 	}
 
-	// Fallback if no command matched
+	// Fallback for unmatched commands
 	msg := fmt.Sprintf("Plain command: %s", in.Command)
 	return executor.ExecuteOutput{
 		Message: api.NewCodeBlockMessage(msg, true),
@@ -73,7 +79,7 @@ func (MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (executo
 }
 
 // initialJobSelection shows only the job dropdown
-func initialJobSelection() executor.ExecuteOutput {
+func (m *MsgExecutor) initialJobSelection() executor.ExecuteOutput {
 	cmdPrefix := func(cmd string) string {
 		return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
 	}
@@ -117,7 +123,7 @@ func initialJobSelection() executor.ExecuteOutput {
 }
 
 // showParametersForJob shows the parameter dropdown after a job is selected
-func showParametersForJob(job string) executor.ExecuteOutput {
+func (m *MsgExecutor) showParametersForJob() executor.ExecuteOutput {
 	cmdPrefix := func(cmd string) string {
 		return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
 	}
@@ -132,7 +138,7 @@ func showParametersForJob(job string) executor.ExecuteOutput {
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: fmt.Sprintf("You selected job: %s. Now select a parameter:", job),
+				Plaintext: fmt.Sprintf("You selected job: %s. Now select a parameter:", m.selectedJob),
 			},
 			Sections: []api.Section{
 				{
@@ -141,7 +147,7 @@ func showParametersForJob(job string) executor.ExecuteOutput {
 						Items: []api.Select{
 							{
 								Name:    "Select Parameter",
-								Command: cmdPrefix(fmt.Sprintf("run job %s", job)),
+								Command: cmdPrefix("select param"),
 								OptionGroups: []api.OptionGroup{
 									{
 										Name:    "Parameters",
@@ -151,6 +157,31 @@ func showParametersForJob(job string) executor.ExecuteOutput {
 								InitialOption: &params[0], // Optional: Set an initial value
 							},
 						},
+					},
+				},
+			},
+			OnlyVisibleForYou: true,
+			ReplaceOriginal:   false,
+		},
+	}
+}
+
+// showRunButton shows the "Run" button after both job and parameter are selected
+func (m *MsgExecutor) showRunButton() executor.ExecuteOutput {
+	btnBuilder := api.NewMessageButtonBuilder()
+	cmdPrefix := func(cmd string) string {
+		return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
+	}
+
+	return executor.ExecuteOutput{
+		Message: api.Message{
+			BaseBody: api.Body{
+				Plaintext: fmt.Sprintf("You selected job: %s and parameter: %s.", m.selectedJob, m.selectedParam),
+			},
+			Sections: []api.Section{
+				{
+					Buttons: []api.Button{
+						btnBuilder.ForCommandWithDescCmd("Run", cmdPrefix(fmt.Sprintf("run job %s %s", m.selectedJob, m.selectedParam)), api.ButtonStylePrimary),
 					},
 				},
 			},
