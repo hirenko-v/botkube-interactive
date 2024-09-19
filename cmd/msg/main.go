@@ -43,13 +43,14 @@ func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exec
 	if len(commandParts) > 2 && commandParts[1] == "selects" {
 		switch commandParts[2] {
 		case "first":
-			// Store the selection in the state
+			// Store the selection from the first dropdown
 			e.state["first"] = commandParts[3]
 			return showBothSelects(e.state["first"]), nil
 		case "second":
-			// Respond based on the selection in the second dropdown
+			// Store the selection from the second dropdown and respond
+			e.state["second"] = commandParts[3]
 			return executor.ExecuteOutput{
-				Message: api.NewCodeBlockMessage(fmt.Sprintf("You selected: %s", commandParts[3]), true),
+				Message: api.NewCodeBlockMessage(fmt.Sprintf("You selected:\nFirst Dropdown: %s\nSecond Dropdown: %s", e.state["first"], e.state["second"]), true),
 			}, nil
 		}
 	}
