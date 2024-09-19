@@ -20,7 +20,7 @@ var version = "dev"
 
 // MsgExecutor implements the Botkube executor plugin interface.
 type MsgExecutor struct {
-	state map[string]string // State to keep track of selections
+	state map[string]map[string]string // State to keep track of selections
 }
 
 // Metadata returns details about the Msg plugin.
@@ -39,20 +39,26 @@ func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exec
 		}, nil
 	}
 
-	commandParts := strings.Fields(in.Command)
-	if len(commandParts) > 2 && commandParts[1] == "selects" {
-		switch commandParts[2] {
-		case "first":
-			// Store the selection from the first dropdown
-			e.state["first"] = commandParts[3]
-			return showBothSelects(e.state["first"]), nil
-		case "second":
-			// Store the selection from the second dropdown and respond
-			e.state["second"] = commandParts[3]
-			return executor.ExecuteOutput{
-				Message: api.NewCodeBlockMessage(fmt.Sprintf("You selected:\nFirst Dropdown: %s\nSecond Dropdown: %s", e.state["first"], e.state["second"]), true),
-			}, nil
-		}
+	// Assume `in.Command` contains the action and value in a structured format
+	action, value := parseCommand(in.Command)
+	userID := in.Context.UserID // Or any unique user/session identifier
+
+	// Initialize user state if not already present
+	if _, ok := e.state[userID]; !ok {
+		e.state[userID] = make(map[string]string)
+	}
+
+	switch action {
+	case "select_first":
+		// Store the selection from the first dropdown
+		e.state[userID]["first"] = value
+		return showBothSelects(e.state[userID]["first"]), nil
+	case "select_second":
+		// Store the selection from the second dropdown and respond
+		e.state[userID]["second"] = value
+		return executor.ExecuteOutput{
+			Message: api.NewCodeBlockMessage(fmt.Sprintf("You selected:\nFirst Dropdown: %s\nSecond Dropdown: %s", e.state[userID]["first"], e.state[userID]["second"]), true),
+		}, nil
 	}
 
 	if strings.TrimSpace(in.Command) == pluginName {
@@ -63,6 +69,16 @@ func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exec
 	return executor.ExecuteOutput{
 		Message: api.NewCodeBlockMessage(msg, true),
 	}, nil
+}
+
+// parseCommand parses the input command into action and value
+func parseCommand(cmd string) (action, value string) {
+	parts := strings.Fields(cmd)
+	if len(parts) > 1 {
+		action = parts[1]
+		value = strings.Join(parts[2:], " ")
+	}
+	return
 }
 
 // initialMessages shows only the first dropdown.
@@ -83,7 +99,7 @@ func initialMessages() executor.ExecuteOutput {
 						Items: []api.Select{
 							{
 								Name:    "first",
-								Command: cmdPrefix("selects first"),
+								Command: cmdPrefix("select_first"),
 								OptionGroups: []api.OptionGroup{
 									{
 										Name: "Group 1",
@@ -123,7 +139,7 @@ func showBothSelects(firstSelection string) executor.ExecuteOutput {
 						Items: []api.Select{
 							{
 								Name:    "first",
-								Command: cmdPrefix("selects first"),
+								Command: cmdPrefix("select_first"),
 								OptionGroups: []api.OptionGroup{
 									{
 										Name: "Group 1",
@@ -141,7 +157,7 @@ func showBothSelects(firstSelection string) executor.ExecuteOutput {
 							},
 							{
 								Name:    "second",
-								Command: cmdPrefix("selects second"),
+								Command: cmdPrefix("select_second"),
 								OptionGroups: []api.OptionGroup{
 									{
 										Name: "Second Group",
@@ -177,7 +193,7 @@ func main() {
 	executor.Serve(map[string]plugin.Plugin{
 		pluginName: &executor.Plugin{
 			Executor: &MsgExecutor{
-				state: make(map[string]string),
+				state: make(map[string]map[string]string),
 			},
 		},
 	})
