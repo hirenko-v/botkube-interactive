@@ -25,12 +25,9 @@ type MsgExecutor struct {
 
 // triggerBotkubeCommand programmatically triggers a Botkube command.
 func triggerBotkubeCommand(ctx context.Context, cmd string) (string, error) {
-	// Assuming `executor.ExecuteInput` can be used programmatically
+	// Prepare the input for the executor
 	input := executor.ExecuteInput{
 		Command: cmd,
-		Context: executor.CommandContext{
-			IsInteractivitySupported: false,  // Modify based on your needs
-		},
 	}
 
 	// Simulate triggering command execution within Botkube's plugin architecture
