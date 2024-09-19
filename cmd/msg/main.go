@@ -37,7 +37,7 @@ func (MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (executo
 		}, nil
 	}
 
-	// Command to show the job selection dropdown
+	// Handle the initial command, show job selection
 	if strings.TrimSpace(in.Command) == pluginName {
 		return initialJobSelection(), nil
 	}
@@ -48,15 +48,24 @@ func (MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (executo
 		return showParametersForJob(job), nil
 	}
 
-	// Handle parameter selection (optional, based on need)
-	if strings.HasPrefix(in.Command, "select param") {
-		param := strings.TrimPrefix(in.Command, "select param ")
+	// Handle button click (final execution) after both job and param selection
+	if strings.HasPrefix(in.Command, "run job") {
+		parts := strings.Split(in.Command, " ")
+		if len(parts) < 4 {
+			return executor.ExecuteOutput{
+				Message: api.NewCodeBlockMessage("Error: Job or parameter missing", true),
+			}, nil
+		}
+		job := parts[2]
+		param := parts[3]
+
+		// Final command execution with job and parameter
 		return executor.ExecuteOutput{
-			Message: api.NewCodeBlockMessage(fmt.Sprintf("You selected parameter: %s", param), true),
+			Message: api.NewCodeBlockMessage(fmt.Sprintf("Executing: kubectl run %s %s", job, param), true),
 		}, nil
 	}
 
-	// Default fallback for other commands
+	// Fallback if no command matched
 	msg := fmt.Sprintf("Plain command: %s", in.Command)
 	return executor.ExecuteOutput{
 		Message: api.NewCodeBlockMessage(msg, true),
@@ -107,14 +116,13 @@ func initialJobSelection() executor.ExecuteOutput {
 	}
 }
 
-// showParametersForJob displays parameters dropdown and run button after job selection
+// showParametersForJob shows the parameter dropdown after a job is selected
 func showParametersForJob(job string) executor.ExecuteOutput {
-	btnBuilder := api.NewMessageButtonBuilder()
 	cmdPrefix := func(cmd string) string {
 		return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
 	}
 
-	// Define a list of parameters based on job selection
+	// Define a list of parameters
 	params := []api.OptionItem{
 		{Name: "Param1", Value: "param1"},
 		{Name: "Param2", Value: "param2"},
@@ -124,7 +132,7 @@ func showParametersForJob(job string) executor.ExecuteOutput {
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: fmt.Sprintf("You selected job: %s. Now select parameters and click run:", job),
+				Plaintext: fmt.Sprintf("You selected job: %s. Now select a parameter:", job),
 			},
 			Sections: []api.Section{
 				{
@@ -132,8 +140,8 @@ func showParametersForJob(job string) executor.ExecuteOutput {
 						ID: "param-dropdown",
 						Items: []api.Select{
 							{
-								Name:    "Select Parameters",
-								Command: cmdPrefix(fmt.Sprintf("select param for job %s", job)),
+								Name:    "Select Parameter",
+								Command: cmdPrefix(fmt.Sprintf("run job %s", job)),
 								OptionGroups: []api.OptionGroup{
 									{
 										Name:    "Parameters",
@@ -143,14 +151,6 @@ func showParametersForJob(job string) executor.ExecuteOutput {
 								InitialOption: &params[0], // Optional: Set an initial value
 							},
 						},
-					},
-				},
-				{
-					Buttons: []api.Button{
-						btnBuilder.ForCommandWithoutDesc(
-							"Run",
-							fmt.Sprintf("kubectl run job %s ${param}", job), // Command to be executed
-						),
 					},
 				},
 			},
