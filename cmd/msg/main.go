@@ -195,7 +195,7 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 					Command: cmdPrefix("run_command"),
 					Style:   api.ButtonStylePrimary, // Optional: Make the button more prominent
 				},
-				btnBuilder.ForCommandWithDescCmd("Run act1", fmt.Sprintf("%s buttons act1", "kubectl")),
+				btnBuilder.ForCommandWithDescCmd("Run act2", fmt.Sprintf("kubectl get %s buttons act2", firstSelection), api.ButtonStylePrimary),
 
 			},
 		})
