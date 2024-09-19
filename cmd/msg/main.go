@@ -42,8 +42,8 @@ func (MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (executo
 	if len(commandParts) > 2 && commandParts[1] == "selects" {
 		switch commandParts[2] {
 		case "first":
-			// User selected the first option, now show the second option
-			return showSecondSelect(), nil
+			// User selected the first option, now show both selects
+			return showBothSelects(), nil
 		case "second":
 			// User selected the second option, respond accordingly
 			return executor.ExecuteOutput{
@@ -71,7 +71,7 @@ func initialMessages() executor.ExecuteOutput {
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: "Showcases interactive message capabilities",
+				Plaintext: "Showcases interactive message capabilities. Please select an option from the first dropdown.",
 			},
 			Sections: []api.Section{
 				{
@@ -102,8 +102,8 @@ func initialMessages() executor.ExecuteOutput {
 	}
 }
 
-// showSecondSelect displays the second select option after the first one is selected.
-func showSecondSelect() executor.ExecuteOutput {
+// showBothSelects displays the second select option after the first one is selected.
+func showBothSelects() executor.ExecuteOutput {
 	cmdPrefix := func(cmd string) string {
 		return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
 	}
@@ -111,9 +111,30 @@ func showSecondSelect() executor.ExecuteOutput {
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: "You've selected from the first dropdown. Now select from the second.",
+				Plaintext: "You've selected from the first dropdown. Now select from the second dropdown.",
 			},
 			Sections: []api.Section{
+				{
+					Selects: api.Selects{
+						ID: "select-id-1",
+						Items: []api.Select{
+							{
+								Name:    "first",
+								Command: cmdPrefix("selects first"),
+								OptionGroups: []api.OptionGroup{
+									{
+										Name: "Group 1",
+										Options: []api.OptionItem{
+											{Name: "BAR", Value: "BAR"},
+											{Name: "BAZ", Value: "BAZ"},
+											{Name: "XYZ", Value: "XYZ"},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
 				{
 					Selects: api.Selects{
 						ID: "select-id-2",
