@@ -63,7 +63,7 @@ func initialMessages() executor.ExecuteOutput {
 			Sections: []api.Section{
 				{
 					Buttons: []api.Button{
-						btnBuilder.ForCommandWithDescCmd("Run act1", fmt.Sprintf("%s buttons act1", pluginName)),
+						btnBuilder.ForCommandWithDescCmd("Run po", fmt.Sprintf("%s po", "kubectl get")),
 						btnBuilder.ForCommandWithDescCmd("Run act2", fmt.Sprintf("%s buttons act2", pluginName), api.ButtonStylePrimary),
 						btnBuilder.ForCommandWithDescCmd("Run act3", fmt.Sprintf("%s buttons act3", pluginName), api.ButtonStyleDanger),
 					},
