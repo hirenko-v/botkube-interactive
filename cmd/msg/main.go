@@ -116,7 +116,7 @@ func showBothSelects() executor.ExecuteOutput {
 			Sections: []api.Section{
 				{
 					Selects: api.Selects{
-						ID: "select-id-1",
+						ID: "select-id",
 						Items: []api.Select{
 							{
 								Name:    "first",
@@ -132,13 +132,6 @@ func showBothSelects() executor.ExecuteOutput {
 									},
 								},
 							},
-						},
-					},
-				},
-				{
-					Selects: api.Selects{
-						ID: "select-id-2",
-						Items: []api.Select{
 							{
 								Name:    "second",
 								Command: cmdPrefix("selects second"),
