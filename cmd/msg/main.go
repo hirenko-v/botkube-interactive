@@ -42,8 +42,10 @@ func (MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (executo
 	if len(commandParts) > 2 && commandParts[1] == "selects" {
 		switch commandParts[2] {
 		case "first":
-			// First option is selected, now show the second option
-			return showSecondSelect(), nil
+			// First option is selected, respond appropriately
+			return executor.ExecuteOutput{
+				Message: api.NewCodeBlockMessage(fmt.Sprintf("You selected: %s", commandParts[3]), true),
+			}, nil
 		case "second":
 			// Second option is selected, handle the final selection
 			return executor.ExecuteOutput{
@@ -62,7 +64,7 @@ func (MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (executo
 	}, nil
 }
 
-// initialMessages shows the first select option.
+// initialMessages shows both selects side by side.
 func initialMessages() executor.ExecuteOutput {
 	cmdPrefix := func(cmd string) string {
 		return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
@@ -95,25 +97,6 @@ func initialMessages() executor.ExecuteOutput {
 						},
 					},
 				},
-			},
-			OnlyVisibleForYou: true,
-			ReplaceOriginal:   false,
-		},
-	}
-}
-
-// showSecondSelect displays the second select option after the first one is selected.
-func showSecondSelect() executor.ExecuteOutput {
-	cmdPrefix := func(cmd string) string {
-		return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
-	}
-
-	return executor.ExecuteOutput{
-		Message: api.Message{
-			BaseBody: api.Body{
-				Plaintext: "You've selected from the first dropdown. Now select from the second.",
-			},
-			Sections: []api.Section{
 				{
 					Selects: api.Selects{
 						ID: "select-id-2",
@@ -140,7 +123,7 @@ func showSecondSelect() executor.ExecuteOutput {
 				},
 			},
 			OnlyVisibleForYou: true,
-			ReplaceOriginal:   true,
+			ReplaceOriginal:   false,
 		},
 	}
 }
