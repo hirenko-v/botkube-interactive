@@ -92,7 +92,13 @@ func initialMessages() executor.ExecuteOutput {
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: "Showcases interactive message capabilities. Please select an option from the first dropdown.",
+				TextFields: api.TextFields{
+					{
+						Label:    "Select an option from the first dropdown",
+						Value:    "Showcases interactive message capabilities.",
+						Markdown: true,
+					},
+				},
 			},
 			Sections: []api.Section{
 				{
@@ -133,7 +139,13 @@ func updateDropdowns(selections map[string]string) executor.ExecuteOutput {
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: "Please review your selections and press 'Run command' to execute.",
+				TextFields: api.TextFields{
+					{
+						Label:    "Full command",
+						Value:    fullCommand,
+						Markdown: true,
+					},
+				},
 			},
 			Sections: []api.Section{
 				{
@@ -179,11 +191,6 @@ func updateDropdowns(selections map[string]string) executor.ExecuteOutput {
 					},
 				},
 				{
-					// Add a message section for command preview
-					Plaintext: fmt.Sprintf("Full command to execute:\n%s", fullCommand),
-				},
-				{
-					// Assuming `api.Buttons` or similar type is available
 					Buttons: []api.Button{
 						{
 							Name:    "Run command",
