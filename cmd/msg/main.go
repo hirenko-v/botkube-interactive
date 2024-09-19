@@ -62,6 +62,11 @@ func initialMessages() executor.ExecuteOutput {
 			},
 			Sections: []api.Section{
 				{
+					Buttons: []api.Button{
+						btnBuilder.ForCommandWithDescCmd("Run po", fmt.Sprintf("%s po", "kubectl get"), api.ButtonStylePrimary),
+					},
+				},
+				{
 					Selects: api.Selects{
 						ID: "select-id",
 						Items: []api.Select{
@@ -107,6 +112,14 @@ func initialMessages() executor.ExecuteOutput {
 							},
 						},
 					},
+				},
+			},
+			PlaintextInputs: []api.LabelInput{
+				{
+					Command:          cmdPrefix("input-text"),
+					DispatchedAction: api.DispatchInputActionOnEnter,
+					Placeholder:      "String pattern to filter by",
+					Text:             "Filter output",
 				},
 			},
 
