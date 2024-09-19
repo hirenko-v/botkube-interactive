@@ -54,11 +54,11 @@ func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exec
 	case "select_first":
 		// Store the selection from the first dropdown
 		e.state[sessionID]["first"] = value
-		return showBothSelects(e.state[sessionID]["first"]), nil
+		return showBothSelects(e.state[sessionID]["first"], e.state[sessionID]["second"]), nil
 	case "select_second":
 		// Store the selection from the second dropdown and show the button
 		e.state[sessionID]["second"] = value
-		return showBothSelects(e.state[sessionID]["first"]), nil
+		return showBothSelects(e.state[sessionID]["first"], e.state[sessionID]["second"]), nil
 	case "run_command":
 		// Handle the command execution after both selections
 		first := e.state[sessionID]["first"]
@@ -116,9 +116,9 @@ func initialMessages() executor.ExecuteOutput {
 									{
 										Name: "Group 1",
 										Options: []api.OptionItem{
-											{Name: "BAR", Value: "BAR"},
-											{Name: "BAZ", Value: "BAZ"},
-											{Name: "XYZ", Value: "XYZ"},
+											{Name: "pod", Value: "pod"},
+											{Name: "deploy", Value: "deploy"},
+											{Name: "cronjob", Value: "cronjob"},
 										},
 									},
 								},
@@ -133,10 +133,69 @@ func initialMessages() executor.ExecuteOutput {
 	}
 }
 
-// showBothSelects displays the second dropdown after the first one is selected and adds a "Run command" button.
-func showBothSelects(firstSelection string) executor.ExecuteOutput {
+// showBothSelects displays the second dropdown after the first one is selected and adds a "Run command" button if both selections are made.
+func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOutput {
 	cmdPrefix := func(cmd string) string {
 		return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
+	}
+
+	// Initialize the sections array
+	sections := []api.Section{
+		{
+			Selects: api.Selects{
+				ID: "select-id",
+				Items: []api.Select{
+					{
+						Name:    "first",
+						Command: cmdPrefix("select_first"),
+						OptionGroups: []api.OptionGroup{
+							{
+								Name: "Group 1",
+								Options: []api.OptionItem{
+									{Name: "pod", Value: "pod"},
+									{Name: "deploy", Value: "deploy"},
+									{Name: "cronjob", Value: "cronjob"},
+								},
+							},
+						},
+						InitialOption: &api.OptionItem{
+							Name:  firstSelection,
+							Value: firstSelection,
+						},
+					},
+					{
+						Name:    "second",
+						Command: cmdPrefix("select_second"),
+						OptionGroups: []api.OptionGroup{
+							{
+								Name: "Second Group",
+								Options: []api.OptionItem{
+									{Name: "update-chrome-data-incentives-stack", Value: "update-chrome-data-incentives-stack"},
+									{Name: "botkube", Value: "botkube"},
+								},
+							},
+						},
+						InitialOption: &api.OptionItem{
+							Name:  "update-chrome-data-incentives-stack",
+							Value: "update-chrome-data-incentives-stack",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	// Only add the button if both selections are made
+	if firstSelection != "" && secondSelection != "" {
+		sections = append(sections, api.Section{
+			Buttons: []api.Button{
+				{
+					Name:    "Run command",
+					Command: cmdPrefix("run_command"),
+					Style:   api.ButtonStylePrimary, // Optional: Make the button more prominent
+				},
+			},
+		})
 	}
 
 	return executor.ExecuteOutput{
@@ -144,59 +203,7 @@ func showBothSelects(firstSelection string) executor.ExecuteOutput {
 			BaseBody: api.Body{
 				Plaintext: "You've selected from the first dropdown. Now select from the second dropdown.",
 			},
-			Sections: []api.Section{
-				{
-					Selects: api.Selects{
-						ID: "select-id",
-						Items: []api.Select{
-							{
-								Name:    "first",
-								Command: cmdPrefix("select_first"),
-								OptionGroups: []api.OptionGroup{
-									{
-										Name: "Group 1",
-										Options: []api.OptionItem{
-											{Name: "BAR", Value: "BAR"},
-											{Name: "BAZ", Value: "BAZ"},
-											{Name: "XYZ", Value: "XYZ"},
-										},
-									},
-								},
-								InitialOption: &api.OptionItem{
-									Name:  firstSelection,
-									Value: firstSelection,
-								},
-							},
-							{
-								Name:    "second",
-								Command: cmdPrefix("select_second"),
-								OptionGroups: []api.OptionGroup{
-									{
-										Name: "Second Group",
-										Options: []api.OptionItem{
-											{Name: "Option A", Value: "Option A"},
-											{Name: "Option B", Value: "Option B"},
-										},
-									},
-								},
-								InitialOption: &api.OptionItem{
-									Name:  "Option A",
-									Value: "Option A",
-								},
-							},
-						},
-					},
-				},
-				{
-					Buttons: []api.Button{
-						{
-							Name:    "Run command",
-							Command: cmdPrefix("run_command"),
-							Style:   api.ButtonStylePrimary, // Optional: Make the button more prominent
-						},
-					},
-				},
-			},
+			Sections:          sections,
 			OnlyVisibleForYou: true,
 			ReplaceOriginal:   true,
 		},
