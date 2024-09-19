@@ -179,14 +179,13 @@ func updateDropdowns(selections map[string]string) executor.ExecuteOutput {
 					},
 				},
 				{
-					// Text message with the command to be executed
-					Plaintext: fullCommand,
+					// Add a message section for command preview
+					Plaintext: fmt.Sprintf("Full command to execute:\n%s", fullCommand),
 				},
 				{
-					// Button to run the command
-					Actions: []api.Action{
+					// Assuming `api.Buttons` or similar type is available
+					Buttons: []api.Button{
 						{
-							Type:    "button",
 							Name:    "Run command",
 							Command: fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, "run_command"),
 						},
