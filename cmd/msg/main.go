@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	description = "Msg sends an example interactive messages."
+	description = "Msg sends an example interactive message."
 	pluginName  = "msg"
 )
 
@@ -91,15 +91,6 @@ func initialMessages() executor.ExecuteOutput {
 
 	return executor.ExecuteOutput{
 		Message: api.Message{
-			BaseBody: api.Body{
-				TextFields: api.TextFields{
-					{
-						Label:    "Select an option from the first dropdown",
-						Value:    "Showcases interactive message capabilities.",
-						Markdown: true,
-					},
-				},
-			},
 			Sections: []api.Section{
 				{
 					Selects: api.Selects{
@@ -138,13 +129,9 @@ func updateDropdowns(selections map[string]string) executor.ExecuteOutput {
 	fullCommand := buildFullCommand(selections)
 	return executor.ExecuteOutput{
 		Message: api.Message{
-			BaseBody: api.Body{
-				TextFields: api.TextFields{
-					{
-						Label:    "Full command",
-						Value:    fullCommand,
-						Markdown: true,
-					},
+			Context: api.ContextItems{
+				{
+					Text: fullCommand,
 				},
 			},
 			Sections: []api.Section{
