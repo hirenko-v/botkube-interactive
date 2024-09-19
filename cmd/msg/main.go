@@ -19,7 +19,9 @@ const (
 var version = "dev"
 
 // MsgExecutor implements the Botkube executor plugin interface.
-type MsgExecutor struct{}
+type MsgExecutor struct {
+	state map[string]string // State to keep track of selections
+}
 
 // Metadata returns details about the Msg plugin.
 func (MsgExecutor) Metadata(context.Context) (api.MetadataOutput, error) {
@@ -30,22 +32,22 @@ func (MsgExecutor) Metadata(context.Context) (api.MetadataOutput, error) {
 }
 
 // Execute returns a given command as a response.
-func (MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (executor.ExecuteOutput, error) {
+func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (executor.ExecuteOutput, error) {
 	if !in.Context.IsInteractivitySupported {
 		return executor.ExecuteOutput{
 			Message: api.NewCodeBlockMessage("Interactivity for this platform is not supported", true),
 		}, nil
 	}
 
-	// Handle command based on user selection
 	commandParts := strings.Fields(in.Command)
 	if len(commandParts) > 2 && commandParts[1] == "selects" {
 		switch commandParts[2] {
 		case "first":
-			// User selected the first option, now show both selects sequentially
-			return showBothSelects(), nil
+			// Store the selection in the state
+			e.state["first"] = commandParts[3]
+			return showBothSelects(e.state["first"]), nil
 		case "second":
-			// User selected the second option, respond accordingly
+			// Respond based on the selection in the second dropdown
 			return executor.ExecuteOutput{
 				Message: api.NewCodeBlockMessage(fmt.Sprintf("You selected: %s", commandParts[3]), true),
 			}, nil
@@ -103,7 +105,7 @@ func initialMessages() executor.ExecuteOutput {
 }
 
 // showBothSelects displays the second dropdown after the first one is selected.
-func showBothSelects() executor.ExecuteOutput {
+func showBothSelects(firstSelection string) executor.ExecuteOutput {
 	cmdPrefix := func(cmd string) string {
 		return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
 	}
@@ -130,6 +132,10 @@ func showBothSelects() executor.ExecuteOutput {
 											{Name: "XYZ", Value: "XYZ"},
 										},
 									},
+								},
+								InitialOption: &api.OptionItem{
+									Name:  firstSelection,
+									Value: firstSelection,
 								},
 							},
 							{
@@ -169,7 +175,9 @@ func (MsgExecutor) Help(context.Context) (api.Message, error) {
 func main() {
 	executor.Serve(map[string]plugin.Plugin{
 		pluginName: &executor.Plugin{
-			Executor: &MsgExecutor{},
+			Executor: &MsgExecutor{
+				state: make(map[string]string),
+			},
 		},
 	})
 }
