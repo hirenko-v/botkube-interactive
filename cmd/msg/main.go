@@ -136,6 +136,11 @@ func initialMessages() executor.ExecuteOutput {
 // showBothSelects displays the second dropdown after the first one is selected and adds a "Run command" button if both selections are made.
 func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOutput {
 	btnBuilder := api.NewMessageButtonBuilder()
+	runCommandButton := btnBuilder.ForCommandWithDescCmd(
+		"Run Command", 
+		fmt.Sprintf("kubectl get %s -n %s", firstSelection, secondSelection), 
+		api.ButtonStylePrimary,
+	)
 	cmdPrefix := func(cmd string) string {
 		return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
 	}
@@ -191,7 +196,7 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 		sections = append(sections, api.Section{
 			Buttons: []api.Button{
 				{
-					btnBuilder.ForCommandWithDescCmd("Run act2", fmt.Sprintf("%s buttons act2", pluginName), api.ButtonStylePrimary),
+					runCommandButton, // Use the button created by ForCommandWithDescCmd
 
 				},
 			},
