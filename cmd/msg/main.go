@@ -192,7 +192,7 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 		sections = append(sections, api.Section{
 			Base: api.Base{
 				Body: api.Body{
-					CodeBlock: code",
+					CodeBlock: code,
 				},
 			},
 			Buttons: []api.Button{
