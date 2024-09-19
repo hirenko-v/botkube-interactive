@@ -30,13 +30,26 @@ func (MsgExecutor) Metadata(context.Context) (api.MetadataOutput, error) {
 }
 
 // Execute returns a given command as a response.
-//
-//nolint:gocritic  //hugeParam: in is heavy (80 bytes); consider passing it by pointer
 func (MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (executor.ExecuteOutput, error) {
 	if !in.Context.IsInteractivitySupported {
 		return executor.ExecuteOutput{
 			Message: api.NewCodeBlockMessage("Interactivity for this platform is not supported", true),
 		}, nil
+	}
+
+	// Handle command based on user selection
+	commandParts := strings.Fields(in.Command)
+	if len(commandParts) > 2 && commandParts[1] == "selects" {
+		switch commandParts[2] {
+		case "first":
+			// First option is selected, now show the second option
+			return showSecondSelect(), nil
+		case "second":
+			// Second option is selected, handle the final selection
+			return executor.ExecuteOutput{
+				Message: api.NewCodeBlockMessage(fmt.Sprintf("You selected: %s", commandParts[3]), true),
+			}, nil
+		}
 	}
 
 	if strings.TrimSpace(in.Command) == pluginName {
@@ -49,8 +62,8 @@ func (MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (executo
 	}, nil
 }
 
+// initialMessages shows the first select option.
 func initialMessages() executor.ExecuteOutput {
-	btnBuilder := api.NewMessageButtonBuilder()
 	cmdPrefix := func(cmd string) string {
 		return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
 	}
@@ -62,69 +75,72 @@ func initialMessages() executor.ExecuteOutput {
 			},
 			Sections: []api.Section{
 				{
-					Buttons: []api.Button{
-						btnBuilder.ForCommandWithDescCmd("Run po", fmt.Sprintf("%s po", "kubectl get"), api.ButtonStylePrimary),
-					},
-				},
-				{
 					Selects: api.Selects{
-						ID: "select-id",
+						ID: "select-id-1",
 						Items: []api.Select{
 							{
 								Name:    "first",
 								Command: cmdPrefix("selects first"),
 								OptionGroups: []api.OptionGroup{
 									{
-										Name: cmdPrefix("selects first"),
+										Name: "Group 1",
 										Options: []api.OptionItem{
 											{Name: "BAR", Value: "BAR"},
 											{Name: "BAZ", Value: "BAZ"},
 											{Name: "XYZ", Value: "XYZ"},
 										},
 									},
-								},
-							},
-							{
-								Name:    "second",
-								Command: cmdPrefix("selects second"),
-								OptionGroups: []api.OptionGroup{
-									{
-										Name: cmdPrefix("selects second"),
-										Options: []api.OptionItem{
-											{Name: "BAR", Value: "BAR"},
-											{Name: "BAZ", Value: "BAZ"},
-											{Name: "XYZ", Value: "XYZ"},
-										},
-									},
-									{
-										Name: cmdPrefix("selects second/section2"),
-										Options: []api.OptionItem{
-											{Name: "123", Value: "123"},
-											{Name: "456", Value: "456"},
-											{Name: "789", Value: "789"},
-										},
-									},
-								},
-								// MUST be defined also under OptionGroups.Options slice.
-								InitialOption: &api.OptionItem{
-									Name: "789", Value: "789",
 								},
 							},
 						},
 					},
 				},
 			},
-			PlaintextInputs: []api.LabelInput{
-				{
-					Command:          cmdPrefix("input-text"),
-					DispatchedAction: api.DispatchInputActionOnEnter,
-					Placeholder:      "String pattern to filter by",
-					Text:             "Filter output",
-				},
-			},
-
 			OnlyVisibleForYou: true,
 			ReplaceOriginal:   false,
+		},
+	}
+}
+
+// showSecondSelect displays the second select option after the first one is selected.
+func showSecondSelect() executor.ExecuteOutput {
+	cmdPrefix := func(cmd string) string {
+		return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
+	}
+
+	return executor.ExecuteOutput{
+		Message: api.Message{
+			BaseBody: api.Body{
+				Plaintext: "You've selected from the first dropdown. Now select from the second.",
+			},
+			Sections: []api.Section{
+				{
+					Selects: api.Selects{
+						ID: "select-id-2",
+						Items: []api.Select{
+							{
+								Name:    "second",
+								Command: cmdPrefix("selects second"),
+								OptionGroups: []api.OptionGroup{
+									{
+										Name: "Second Group",
+										Options: []api.OptionItem{
+											{Name: "Option A", Value: "Option A"},
+											{Name: "Option B", Value: "Option B"},
+										},
+									},
+								},
+								InitialOption: &api.OptionItem{
+									Name:  "Option A",
+									Value: "Option A",
+								},
+							},
+						},
+					},
+				},
+			},
+			OnlyVisibleForYou: true,
+			ReplaceOriginal:   true,
 		},
 	}
 }
