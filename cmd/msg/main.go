@@ -41,23 +41,25 @@ func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exec
 
 	// Assume `in.Command` contains the action and value in a structured format
 	action, value := parseCommand(in.Command)
-	userID := in.Context.UserID // Or any unique user/session identifier
 
-	// Initialize user state if not already present
-	if _, ok := e.state[userID]; !ok {
-		e.state[userID] = make(map[string]string)
+	// Use a generic key for simplicity; adapt if needed
+	sessionID := "default_session" // Replace with an actual identifier if available
+
+	// Initialize session state if not already present
+	if _, ok := e.state[sessionID]; !ok {
+		e.state[sessionID] = make(map[string]string)
 	}
 
 	switch action {
 	case "select_first":
 		// Store the selection from the first dropdown
-		e.state[userID]["first"] = value
-		return showBothSelects(e.state[userID]["first"]), nil
+		e.state[sessionID]["first"] = value
+		return showBothSelects(e.state[sessionID]["first"]), nil
 	case "select_second":
 		// Store the selection from the second dropdown and respond
-		e.state[userID]["second"] = value
+		e.state[sessionID]["second"] = value
 		return executor.ExecuteOutput{
-			Message: api.NewCodeBlockMessage(fmt.Sprintf("You selected:\nFirst Dropdown: %s\nSecond Dropdown: %s", e.state[userID]["first"], e.state[userID]["second"]), true),
+			Message: api.NewCodeBlockMessage(fmt.Sprintf("You selected:\nFirst Dropdown: %s\nSecond Dropdown: %s", e.state[sessionID]["first"], e.state[sessionID]["second"]), true),
 		}, nil
 	}
 
