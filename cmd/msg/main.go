@@ -197,6 +197,10 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 	// Only add the button if both selections are made
 	if firstSelection != "" && secondSelection != "" {
 		code := fmt.Sprintf("kubectl get %s -n %s", firstSelection, secondSelection)
+		command := fmt.Sprintf("kubectl get %s -n %s", firstSelection, secondSelection)
+
+		// Programmatically trigger Botkube command execution
+		ctx := context.Background()
 		commandOutput, err := triggerBotkubeCommand(ctx, command)
 		if err != nil {
 			commandOutput = fmt.Sprintf("Failed to execute Botkube command: %s", err)
