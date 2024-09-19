@@ -188,15 +188,15 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 
 	// Only add the button if both selections are made
 	if firstSelection != "" && secondSelection != "" {
+		code := fmt.Sprintf("kubectl get %s -n %s", firstSelection, secondSelection)
 		sections = append(sections, api.Section{
 			Base: api.Base{
 				Body: api.Body{
-					CodeBlock: "test",
+					CodeBlock: code",
 				},
 			},
-
 			Buttons: []api.Button{
-				btnBuilder.ForCommandWithDescCmd("Run command", fmt.Sprintf("kubectl get %s -n %s", firstSelection, secondSelection), api.ButtonStylePrimary),
+				btnBuilder.ForCommandWithDescCmd("Run command", code, api.ButtonStylePrimary),
 
 			},
 		})
