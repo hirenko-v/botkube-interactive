@@ -30,8 +30,6 @@ func (MsgExecutor) Metadata(context.Context) (api.MetadataOutput, error) {
 }
 
 // Execute returns a given command as a response.
-//
-//nolint:gocritic  //hugeParam: in is heavy (80 bytes); consider passing it by pointer
 func (MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (executor.ExecuteOutput, error) {
 	if !in.Context.IsInteractivitySupported {
 		return executor.ExecuteOutput{
@@ -39,16 +37,26 @@ func (MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (executo
 		}, nil
 	}
 
-	// Check if command is to select the job
-	if strings.HasPrefix(in.Command, "select job") {
-		selectedJob := strings.TrimPrefix(in.Command, "select job ")
-		return showParametersForJob(selectedJob), nil
-	}
-
+	// Command to show the job selection dropdown
 	if strings.TrimSpace(in.Command) == pluginName {
 		return initialJobSelection(), nil
 	}
 
+	// Handle job selection
+	if strings.HasPrefix(in.Command, "select job") {
+		job := strings.TrimPrefix(in.Command, "select job ")
+		return showParametersForJob(job), nil
+	}
+
+	// Handle parameter selection (optional, based on need)
+	if strings.HasPrefix(in.Command, "select param") {
+		param := strings.TrimPrefix(in.Command, "select param ")
+		return executor.ExecuteOutput{
+			Message: api.NewCodeBlockMessage(fmt.Sprintf("You selected parameter: %s", param), true),
+		}, nil
+	}
+
+	// Default fallback for other commands
 	msg := fmt.Sprintf("Plain command: %s", in.Command)
 	return executor.ExecuteOutput{
 		Message: api.NewCodeBlockMessage(msg, true),
@@ -99,14 +107,14 @@ func initialJobSelection() executor.ExecuteOutput {
 	}
 }
 
-// showParametersForJob displays parameters dropdown after job selection
+// showParametersForJob displays parameters dropdown and run button after job selection
 func showParametersForJob(job string) executor.ExecuteOutput {
 	btnBuilder := api.NewMessageButtonBuilder()
 	cmdPrefix := func(cmd string) string {
 		return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
 	}
 
-	// Define a list of parameters based on job selection (for simplicity, we'll use the same params for all jobs)
+	// Define a list of parameters based on job selection
 	params := []api.OptionItem{
 		{Name: "Param1", Value: "param1"},
 		{Name: "Param2", Value: "param2"},
