@@ -60,79 +60,74 @@ func initialMessages() executor.ExecuteOutput {
 			BaseBody: api.Body{
 				Plaintext: "Showcases interactive message capabilities",
 			},
+	// Define a list of jobs
+	jobs := []api.OptionItem{
+		{Name: "Job1", Value: "job1"},
+		{Name: "Job2", Value: "job2"},
+		{Name: "Job3", Value: "job3"},
+	}
+
+	// Define a list of parameters
+	params := []api.OptionItem{
+		{Name: "Param1", Value: "param1"},
+		{Name: "Param2", Value: "param2"},
+		{Name: "Param3", Value: "param3"},
+	}
+
+	return executor.ExecuteOutput{
+		Message: api.Message{
+			BaseBody: api.Body{
+				Plaintext: "Select a job and parameters, then click run:",
+			},
 			Sections: []api.Section{
 				{
-					Buttons: []api.Button{
-						btnBuilder.ForCommandWithDescCmd("Run po", fmt.Sprintf("%s po", "kubectl get")),
-						btnBuilder.ForCommandWithDescCmd("Run act2", fmt.Sprintf("%s buttons act2", pluginName), api.ButtonStylePrimary),
-						btnBuilder.ForCommandWithDescCmd("Run act3", fmt.Sprintf("%s buttons act3", pluginName), api.ButtonStyleDanger),
-					},
-				},
-				{
-					Buttons: []api.Button{
-						btnBuilder.ForCommandWithoutDesc("Run act4", fmt.Sprintf("%s buttons act4", pluginName)),
-						btnBuilder.ForCommandWithoutDesc("Run act5", fmt.Sprintf("%s buttons act5", pluginName), api.ButtonStylePrimary),
-						btnBuilder.ForCommandWithoutDesc("Run act6", fmt.Sprintf("%s buttons act6", pluginName), api.ButtonStyleDanger),
-					},
-				},
-				{
 					Selects: api.Selects{
-						ID: "select-id",
+						ID: "job-dropdown",
 						Items: []api.Select{
 							{
-								Name:    "first",
-								Command: cmdPrefix("selects first"),
+								Name:    "Select Job",
+								Command: cmdPrefix("select job"),
 								OptionGroups: []api.OptionGroup{
 									{
-										Name: cmdPrefix("selects first"),
-										Options: []api.OptionItem{
-											{Name: "BAR", Value: "BAR"},
-											{Name: "BAZ", Value: "BAZ"},
-											{Name: "XYZ", Value: "XYZ"},
-										},
+										Name: "Jobs",
+										Options: jobs,
 									},
 								},
-							},
-							{
-								Name:    "second",
-								Command: cmdPrefix("selects second"),
-								OptionGroups: []api.OptionGroup{
-									{
-										Name: cmdPrefix("selects second"),
-										Options: []api.OptionItem{
-											{Name: "BAR", Value: "BAR"},
-											{Name: "BAZ", Value: "BAZ"},
-											{Name: "XYZ", Value: "XYZ"},
-										},
-									},
-									{
-										Name: cmdPrefix("selects second/section2"),
-										Options: []api.OptionItem{
-											{Name: "123", Value: "123"},
-											{Name: "456", Value: "456"},
-											{Name: "789", Value: "789"},
-										},
-									},
-								},
-								// MUST be defined also under OptionGroups.Options slice.
-								InitialOption: &api.OptionItem{
-									Name: "789", Value: "789",
-								},
+								InitialOption: &jobs[0], // Optional: Set an initial value
 							},
 						},
 					},
 				},
-			},
-			PlaintextInputs: []api.LabelInput{
 				{
-					Command:          cmdPrefix("input-text"),
-					DispatchedAction: api.DispatchInputActionOnEnter,
-					Placeholder:      "String pattern to filter by",
-					Text:             "Filter output",
+					Selects: api.Selects{
+						ID: "param-dropdown",
+						Items: []api.Select{
+							{
+								Name:    "Select Parameters",
+								Command: cmdPrefix("select param"),
+								OptionGroups: []api.OptionGroup{
+									{
+										Name: "Parameters",
+										Options: params,
+									},
+								},
+								InitialOption: &params[0], // Optional: Set an initial value
+							},
+						},
+					},
+				},
+				{
+					Buttons: []api.Button{
+						btnBuilder.ForCommandWithDescCmd("Run po", fmt.Sprintf("%s po", "kubectl get"), api.ButtonStylePrimary),
+						btnBuilder.ForCommandWithoutDesc(
+							"Run",
+							fmt.Sprintf("kubectl run job ${job} ${param}"), // Command to be executed
+						),
+					},
 				},
 			},
 
-			OnlyVisibleForYou: false,
+			OnlyVisibleForYou: true,
 			ReplaceOriginal:   false,
 		},
 	}
