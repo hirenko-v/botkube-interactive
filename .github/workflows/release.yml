@@ -63,6 +63,5 @@ jobs:
         run: |
           gh release create "${GITHUB_REF#refs/tags/}" \
           --notes-file release.md \
-          # ./dist/source_* \
           ./dist/executor_* \
           ./plugins-index.yaml
