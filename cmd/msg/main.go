@@ -23,30 +23,32 @@ type MsgExecutor struct {
 	state map[string]map[string]string // State to keep track of selections
 }
 
+// triggerBotkubeCommand programmatically triggers a Botkube command.
+func triggerBotkubeCommand(ctx context.Context, cmd string) (string, error) {
+	// Assuming `executor.ExecuteInput` can be used programmatically
+	input := executor.ExecuteInput{
+		Command: cmd,
+		Context: executor.CommandContext{
+			IsInteractivitySupported: false,  // Modify based on your needs
+		},
+	}
+
+	// Simulate triggering command execution within Botkube's plugin architecture
+	output, err := (&MsgExecutor{}).Execute(ctx, input)
+	if err != nil {
+		return "", err
+	}
+
+	// Assuming output is a plaintext message or code block
+	return output.Message.BaseBody.CodeBlock, nil
+}
+
 // Metadata returns details about the Msg plugin.
 func (MsgExecutor) Metadata(context.Context) (api.MetadataOutput, error) {
 	return api.MetadataOutput{
 		Version:     version,
 		Description: description,
 	}, nil
-}
-
-// Simulate execution without showing the command
-func (e *MsgExecutor) runBotkubeCommand(ctx context.Context, cmd string) (string, error) {
-    // Create input for Botkube's internal executor
-    input := executor.ExecuteInput{
-        Command: cmd,
-        // You can set other input fields if needed, like context
-    }
-
-    // Call the same Botkube logic that normally runs when a button is clicked
-    output, err := e.Execute(ctx, input)
-    if err != nil {
-        return "", err
-    }
-
-    // Extract and return the result from Botkube's response
-    return output.Message.Plaintext, nil
 }
 
 // Execute returns a given command as a response.
@@ -194,19 +196,15 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 
 	// Only add the button if both selections are made
 	if firstSelection != "" && secondSelection != "" {
-
-		result, err := e.runBotkubeCommand(ctx, "kubectl get po botkube-6c7d9cb8cd-768nv -n botkube --ignore-not-found=true -o go-template='{{.metadata.name}}'")
-		if err != nil {
-			return executor.ExecuteOutput{
-				Message: api.NewCodeBlockMessage("Failed to run internal command", true),
-			}, nil
-		}
-
 		code := fmt.Sprintf("kubectl get %s -n %s", firstSelection, secondSelection)
+		commandOutput, err := triggerBotkubeCommand(ctx, command)
+		if err != nil {
+			commandOutput = fmt.Sprintf("Failed to execute Botkube command: %s", err)
+		}
 		sections = append(sections, api.Section{
 			Base: api.Base{
 				Body: api.Body{
-					CodeBlock: result,
+					CodeBlock: commandOutput,
 				},
 			},
 			Buttons: []api.Button{
