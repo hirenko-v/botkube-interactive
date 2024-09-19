@@ -23,23 +23,6 @@ type MsgExecutor struct {
 	state map[string]map[string]string // State to keep track of selections
 }
 
-// triggerBotkubeCommand programmatically triggers a Botkube command.
-func triggerBotkubeCommand(ctx context.Context, cmd string) (string, error) {
-	// Prepare the input for the executor
-	input := executor.ExecuteInput{
-		Command: cmd,
-	}
-
-	// Simulate triggering command execution within Botkube's plugin architecture
-	output, err := (&MsgExecutor{}).Execute(ctx, input)
-	if err != nil {
-		return "", err
-	}
-
-	// Assuming output is a plaintext message or code block
-	return output.Message.BaseBody.CodeBlock, nil
-}
-
 // Metadata returns details about the Msg plugin.
 func (MsgExecutor) Metadata(context.Context) (api.MetadataOutput, error) {
 	return api.MetadataOutput{
@@ -194,18 +177,10 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 	// Only add the button if both selections are made
 	if firstSelection != "" && secondSelection != "" {
 		code := fmt.Sprintf("kubectl get %s -n %s", firstSelection, secondSelection)
-		command := fmt.Sprintf("kubectl get %s -n %s", firstSelection, secondSelection)
-
-		// Programmatically trigger Botkube command execution
-		ctx := context.Background()
-		commandOutput, err := triggerBotkubeCommand(ctx, command)
-		if err != nil {
-			commandOutput = fmt.Sprintf("Failed to execute Botkube command: %s", err)
-		}
 		sections = append(sections, api.Section{
 			Base: api.Base{
 				Body: api.Body{
-					CodeBlock: commandOutput,
+					CodeBlock: code,
 				},
 			},
 			Buttons: []api.Button{
