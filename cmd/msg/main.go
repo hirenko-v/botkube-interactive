@@ -91,6 +91,9 @@ func initialMessages() executor.ExecuteOutput {
 
 	return executor.ExecuteOutput{
 		Message: api.Message{
+			BaseBody: api.Body{
+				Plaintext: "Please select an option from the first dropdown.",
+			},
 			Sections: []api.Section{
 				{
 					Selects: api.Selects{
@@ -129,10 +132,8 @@ func updateDropdowns(selections map[string]string) executor.ExecuteOutput {
 	fullCommand := buildFullCommand(selections)
 	return executor.ExecuteOutput{
 		Message: api.Message{
-			Context: api.ContextItems{
-				{
-					Text: fullCommand,
-				},
+			BaseBody: api.Body{
+				Plaintext: fullCommand,
 			},
 			Sections: []api.Section{
 				{
