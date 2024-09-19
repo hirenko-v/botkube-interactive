@@ -3,11 +3,11 @@
 ############
 
 build-plugins: ## Builds all plugins for all defined platforms
-	goreleaser build --rm-dist --snapshot
+	goreleaser build --snapshot
 .PHONY: build-plugins
 
 build-plugins-single: ## Builds all plugins only for current GOOS and GOARCH.
-	goreleaser build --rm-dist --single-target --snapshot
+	goreleaser build --single-target --snapshot
 .PHONY: build-plugins-single
 
 ##############
