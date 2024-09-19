@@ -191,7 +191,7 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 		sections = append(sections, api.Section{
 			Buttons: []api.Button{
 				{
-					btnBuilder.ForCommandWithDescCmd("Run Command", fmt.Sprintf("kubectl get %s -n %s", firstSelection, secondSelection), api.ButtonStylePrimary),
+					btnBuilder.ForCommandWithDescCmd("Run act2", fmt.Sprintf("%s buttons act2", pluginName), api.ButtonStylePrimary),
 
 				},
 			},
