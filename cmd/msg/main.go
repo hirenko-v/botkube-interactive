@@ -113,8 +113,14 @@ func initialMessages() executor.ExecuteOutput {
 		}
 	}
 
-	// Join the list of files into a single string
-	fileListString := strings.Join(fileList, ", ")
+	// Generate options dynamically from the fileList
+	options := make([]api.OptionItem, len(fileList))
+	for i, fileName := range fileList {
+		options[i] = api.OptionItem{
+			Name:  fileName,
+			Value: fileName,
+		}
+	}
 
 	cmdPrefix := func(cmd string) string {
 		return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
@@ -123,7 +129,7 @@ func initialMessages() executor.ExecuteOutput {
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: fmt.Sprintf("Files in /scripts: %s", fileListString),
+				Plaintext: "Select a file from the dropdown.",
 			},
 			Sections: []api.Section{
 				{
@@ -135,12 +141,8 @@ func initialMessages() executor.ExecuteOutput {
 								Command: cmdPrefix("select_first"),
 								OptionGroups: []api.OptionGroup{
 									{
-										Name: "Group 1",
-										Options: []api.OptionItem{
-											{Name: "pod", Value: "pod"},
-											{Name: "deploy", Value: "deploy"},
-											{Name: "cronjob", Value: "cronjob"},
-										},
+										Name:    "Files in /scripts",
+										Options: options, // Use dynamically generated options
 									},
 								},
 							},
