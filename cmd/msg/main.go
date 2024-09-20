@@ -249,13 +249,6 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 					Options: dropdownOptions,
 				},
 			},
-			InitialOption: func() *api.OptionItem {
-				if val, exists := state[option.Flags[0]]; exists && val != "" {
-					return &api.OptionItem{Name: val, Value: val}
-				}
-				// No initial option if the state doesn't have the key
-				return nil
-			}(),
 		})
 	}
 
