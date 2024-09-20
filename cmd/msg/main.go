@@ -95,31 +95,30 @@ func parseCommand(cmd string) (action, value string) {
 	return
 }
 
-// initialMessages shows only the first dropdown.
-func initialMessages() executor.ExecuteOutput {
+// getFileOptions retrieves file options from the /scripts directory.
+func getFileOptions() ([]api.OptionItem, error) {
 	dir := "/scripts"
 	files, err := os.ReadDir(dir)
 	if err != nil {
-		log.Fatalf("Failed to open directory: %v", err)
+		return nil, fmt.Errorf("failed to open directory: %v", err)
 	}
 
-	// Create a slice to store file names
-	var fileList []string
-
-	// Iterate over the directory entries and add file names to the slice
+	var fileList []api.OptionItem
 	for _, file := range files {
-		if !file.IsDir() { // Only include files, not directories
-			fileList = append(fileList, file.Name())
+		if !file.IsDir() {
+			fileList = append(fileList, api.OptionItem{
+				Name:  file.Name(),
+				Value: file.Name(),
+			})
 		}
 	}
+	return fileList, nil
+}
 
-	// Generate options dynamically from the fileList
-	options := make([]api.OptionItem, len(fileList))
-	for i, fileName := range fileList {
-		options[i] = api.OptionItem{
-			Name:  fileName,
-			Value: fileName,
-		}
+func initialMessages() executor.ExecuteOutput {
+	fileList, err := getFileOptions()
+	if err != nil {
+		log.Fatalf("Error retrieving file options: %v", err)
 	}
 
 	cmdPrefix := func(cmd string) string {
@@ -142,7 +141,7 @@ func initialMessages() executor.ExecuteOutput {
 								OptionGroups: []api.OptionGroup{
 									{
 										Name:    "Files in /scripts",
-										Options: options, // Use dynamically generated options
+										Options: fileList, // Use the retrieved file list
 									},
 								},
 							},
@@ -156,11 +155,15 @@ func initialMessages() executor.ExecuteOutput {
 	}
 }
 
-// showBothSelects displays the second dropdown after the first one is selected and adds a "Run command" button if both selections are made.
 func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOutput {
 	btnBuilder := api.NewMessageButtonBuilder()
 	cmdPrefix := func(cmd string) string {
 		return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
+	}
+
+	fileList, err := getFileOptions()
+	if err != nil {
+		log.Fatalf("Error retrieving file options: %v", err)
 	}
 
 	// Initialize the sections array
@@ -174,12 +177,8 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 						Command: cmdPrefix("select_first"),
 						OptionGroups: []api.OptionGroup{
 							{
-								Name: "Group 1",
-								Options: []api.OptionItem{
-									{Name: "pod", Value: "pod"},
-									{Name: "deploy", Value: "deploy"},
-									{Name: "cronjob", Value: "cronjob"},
-								},
+								Name:    "Files in /scripts",
+								Options: fileList, // Use the same file list
 							},
 						},
 						InitialOption: &api.OptionItem{
@@ -200,8 +199,8 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 							},
 						},
 						InitialOption: &api.OptionItem{
-							Name:  "update-chrome-data-incentives-stack",
-							Value: "update-chrome-data-incentives-stack",
+							Name:  secondSelection,
+							Value: secondSelection,
 						},
 					},
 				},
@@ -235,6 +234,34 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 		},
 	}
 }
+
+	// Only add the button if both selections are made
+	if firstSelection != "" && secondSelection != "" {
+		code := fmt.Sprintf("kubectl get %s -n %s", firstSelection, secondSelection)
+		sections = append(sections, api.Section{
+			Base: api.Base{
+				Body: api.Body{
+					CodeBlock: code,
+				},
+			},
+			Buttons: []api.Button{
+				btnBuilder.ForCommandWithoutDesc("Run command", code, api.ButtonStylePrimary),
+			},
+		})
+	}
+
+	return executor.ExecuteOutput{
+		Message: api.Message{
+			BaseBody: api.Body{
+				Plaintext: "You've selected from the first dropdown. Now select from the second dropdown.",
+			},
+			Sections:          sections,
+			OnlyVisibleForYou: true,
+			ReplaceOriginal:   true,
+		},
+	}
+}
+
 
 func (MsgExecutor) Help(context.Context) (api.Message, error) {
 	msg := description
