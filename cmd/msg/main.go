@@ -212,45 +212,42 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 		},
 	}
 
-	// Check if first selection is made
-	if state["first"] != "" {
-		// Run the script to get dynamic options based on the first selection
-		scriptOutput, err := runScript(state["first"])
-		if err != nil {
-			log.Fatalf("Error running script: %v", err)
+	// Run the script to get dynamic options based on the first selection
+	scriptOutput, err := runScript(state["first"])
+	if err != nil {
+		log.Fatalf("Error running script: %v", err)
+	}
+
+	// Create multiple dropdowns based on the options in the script output
+	for _, option := range scriptOutput.Options {
+		// Skip the help options (-h, --help)
+		if option.Flags[0] == "-h" {
+			continue
 		}
 
-		// Create multiple dropdowns based on the options in the script output
-		for _, option := range scriptOutput.Options {
-			// Skip the help options (-h, --help)
-			if option.Flags[0] == "-h" {
-				continue
-			}
-
-			var dropdownOptions []api.OptionItem
-			for _, value := range option.Values {
-				dropdownOptions = append(dropdownOptions, api.OptionItem{
-					Name:  value,
-					Value: fmt.Sprintf("%s %s", option.Flags[0], value),
-				})
-			}
-
-			// Use the flag as a key to track dropdown selections
-			sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
-				Name:    option.Description, // Adjust name based on flags
-				Command: cmdPrefix(fmt.Sprintf("select_dynamic %s", option.Flags[0])), // Handle dynamic dropdown
-				OptionGroups: []api.OptionGroup{
-					{
-						Name:    option.Description,
-						Options: dropdownOptions,
-					},
-				},
-				// InitialOption: &api.OptionItem{
-				// 	Name:  state[option.Flags[0]], // Fetch previous selection from state
-				// 	Value: state[option.Flags[0]],
-				// },
+		var dropdownOptions []api.OptionItem
+		for _, value := range option.Values {
+			dropdownOptions = append(dropdownOptions, api.OptionItem{
+				Name:  value,
+				Value: fmt.Sprintf("%s %s", option.Flags[0], value),
 			})
 		}
+
+		// Use the flag as a key to track dropdown selections
+		sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
+			Name:    option.Description, // Adjust name based on flags
+			Command: cmdPrefix(fmt.Sprintf("select_dynamic %s", option.Flags[0])), // Handle dynamic dropdown
+			OptionGroups: []api.OptionGroup{
+				{
+					Name:    option.Description,
+					Options: dropdownOptions,
+				},
+			},
+			// InitialOption: &api.OptionItem{
+			// 	Name:  state[option.Flags[0]], // Fetch previous selection from state
+			// 	Value: state[option.Flags[0]],
+			// },
+		})
 	}
 
 	// If all selections are made, show the run button
@@ -293,7 +290,7 @@ func allSelectionsMade(state map[string]string, options []Option) bool {
 // Helper function to build the final command based on all selections
 func buildFinalCommand(state map[string]string) string {
 	var commandParts []string
-	for key, value := range state {
+	for _, value := range state {
 		if value != "" {
 			commandParts = append(commandParts, value)
 		}
