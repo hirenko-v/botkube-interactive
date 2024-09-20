@@ -187,6 +187,7 @@ func initialMessages() executor.ExecuteOutput {
 
 // showBothSelects displays the second dropdown after the first one is selected and adds a "Run command" button if both selections are made.
 func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOutput {
+	test := "123"
 	fileList, err := getFileOptions()
 	if err != nil {
 		log.Fatalf("Error retrieving file options: %v", err)
@@ -228,12 +229,12 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 		if err != nil {
 			log.Fatalf("Error running script: %v", err)
 		}
-
        // Create multiple dropdowns based on the options in the script output
         for _, option := range scriptOutput.Options {
             // var dropdownOptions []api.OptionItem
+			if option.Flags[0] != "-h"
             for _, value := range option.Values {
-				fmt.Sprintf(value)
+				test := value
     //             dropdownOptions = append(dropdownOptions, api.OptionItem{
     //                 Name:  value,
     //                 Value: value,
@@ -277,7 +278,7 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 		sections = append(sections, api.Section{
 			Base: api.Base{
 				Body: api.Body{
-					CodeBlock: code,
+					CodeBlock: test,
 				},
 			},
 			Buttons: []api.Button{
