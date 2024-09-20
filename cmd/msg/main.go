@@ -255,7 +255,9 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 				if val, exists := state[option.Flags[0]]; exists && val != "" {
 					return &api.OptionItem{Name: val, Value: val}
 				}
-				return nil 
+				// No initial option if the state doesn't have the key
+				return nil
+			}(),
 		})
 	}
 
