@@ -166,7 +166,6 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 		return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
 	}
 
-	// Initialize the sections array
 	sections := []api.Section{
 		{
 			Selects: api.Selects{
@@ -177,7 +176,7 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 						Command: cmdPrefix("select_first"),
 						OptionGroups: []api.OptionGroup{
 							{
-								Name: "Group 1",
+								Name:    "Files in /scripts",
 								Options: fileList,
 							},
 						},
@@ -186,27 +185,35 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 							Value: firstSelection,
 						},
 					},
-					{
-						Name:    "second",
-						Command: cmdPrefix("select_second"),
-						OptionGroups: []api.OptionGroup{
-							{
-								Name: "Second Group",
-								Options: []api.OptionItem{
-									{Name: "update-chrome-data-incentives-stack", Value: "update-chrome-data-incentives-stack"},
-									{Name: "botkube", Value: "botkube"},
-								},
-							},
-						},
-					},
 				},
 			},
 		},
 	}
 
+	// Show second dropdown if the first selection is made
+	if firstSelection != "" {
+		sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
+			Name:    "second",
+			Command: cmdPrefix("select_second"),
+			OptionGroups: []api.OptionGroup{
+				{
+					Name: "Second Group",
+					Options: []api.OptionItem{
+						{Name: "-i true", Value: "-i true"},
+						{Name: "-i false", Value: "-i true"},
+					},
+				},
+			},
+			InitialOption: &api.OptionItem{
+				Name:  secondSelection,
+				Value: secondSelection,
+			},
+		})
+	}
+
 	// Only add the button if both selections are made
 	if firstSelection != "" && secondSelection != "" {
-		code := fmt.Sprintf("kubectl get %s -n %s", firstSelection, secondSelection)
+		code := fmt.Sprintf("run %s -n %s", firstSelection, secondSelection)
 		sections = append(sections, api.Section{
 			Base: api.Base{
 				Body: api.Body{
@@ -230,6 +237,7 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 		},
 	}
 }
+
 
 func (MsgExecutor) Help(context.Context) (api.Message, error) {
 	msg := description
