@@ -235,14 +235,14 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
             for _, value := range option.Values {
                 dropdownOptions = append(dropdownOptions, api.OptionItem{
                     Name:  value,
-                    Value: fmt.Sprintf("%s %s", option.Flags[0], value), // Using the first flag for the command
+                    Value: value
                 })
             }
 
             // Add each dynamic dropdown to the section
             sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
-                Name:    option.Description, // Use the option description as the dropdown name
-                Command: cmdPrefix("select_second"),
+                Name:    option.Flags[0],
+                // Command: cmdPrefix("select_second"),
                 OptionGroups: []api.OptionGroup{
                     {
                         Name:    option.Description, // Use the option description as the group name
@@ -251,7 +251,23 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
                 },
             })
         }
+
+		sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
+			Name:    "second",
+			Command: cmdPrefix("select_second"),
+			OptionGroups: []api.OptionGroup{
+				{
+					Name: "Second Group",
+					Options: []api.OptionItem{
+						{Name: "true", Value: "-i true"},
+						{Name: "false", Value: "-i false"},
+					},
+				},
+			},
+		})
     }
+
+
 
 	// Only add the button if both selections are made
 	if firstSelection != "" && secondSelection != "" {
