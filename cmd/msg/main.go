@@ -64,6 +64,7 @@ func (MsgExecutor) Metadata(context.Context) (api.MetadataOutput, error) {
 }
 
 // Execute returns a given command as a response.
+// Execute returns a given command as a response.
 func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (executor.ExecuteOutput, error) {
 	if !in.Context.IsInteractivitySupported {
 		return executor.ExecuteOutput{
@@ -71,10 +72,9 @@ func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exec
 		}, nil
 	}
 
-	// Assume `in.Command` contains the action and value in a structured format
+	// Parse the action and value from the command
 	action, value := parseCommand(in.Command)
 
-	// Use a generic key for simplicity; adapt if needed
 	sessionID := "default_session" // Replace with an actual identifier if available
 
 	// Initialize session state if not already present
@@ -86,7 +86,13 @@ func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exec
 	case "select_first":
 		// Store the selection from the first dropdown
 		e.state[sessionID]["first"] = value
-		return showBothSelects(e.state[sessionID]["first"], nil
+		return showBothSelects(e.state[sessionID])
+
+	case "select_dynamic":
+		// Store dynamic dropdown selections (flag is passed in the command)
+		flag := strings.Fields(value)[0]
+		e.state[sessionID][flag] = strings.TrimPrefix(value, flag+" ")
+		return showBothSelects(e.state[sessionID])
 	}
 
 	if strings.TrimSpace(in.Command) == pluginName {
@@ -98,6 +104,7 @@ func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exec
 		Message: api.NewCodeBlockMessage(msg, true),
 	}, nil
 }
+
 
 // parseCommand parses the input command into action and value
 func parseCommand(cmd string) (action, value string) {
@@ -169,12 +176,13 @@ func initialMessages() executor.ExecuteOutput {
 	}
 }
 
-// showBothSelects displays the second dropdown after the first one is selected and adds a "Run command" button if both selections are made.
-func showBothSelects(firstSelection) executor.ExecuteOutput {
+// showBothSelects dynamically generates dropdowns based on the selected options.
+func showBothSelects(state map[string]string) executor.ExecuteOutput {
 	fileList, err := getFileOptions()
 	if err != nil {
 		log.Fatalf("Error retrieving file options: %v", err)
 	}
+
 	btnBuilder := api.NewMessageButtonBuilder()
 	cmdPrefix := func(cmd string) string {
 		return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
@@ -195,8 +203,8 @@ func showBothSelects(firstSelection) executor.ExecuteOutput {
 							},
 						},
 						InitialOption: &api.OptionItem{
-							Name:  firstSelection,
-							Value: firstSelection,
+							Name:  state["first"], // Get first selection from state
+							Value: state["first"],
 						},
 					},
 				},
@@ -205,9 +213,9 @@ func showBothSelects(firstSelection) executor.ExecuteOutput {
 	}
 
 	// Check if first selection is made
-	if firstSelection != "" {
+	if state["first"] != "" {
 		// Run the script to get dynamic options based on the first selection
-		scriptOutput, err := runScript(firstSelection)
+		scriptOutput, err := runScript(state["first"])
 		if err != nil {
 			log.Fatalf("Error running script: %v", err)
 		}
@@ -227,35 +235,43 @@ func showBothSelects(firstSelection) executor.ExecuteOutput {
 				})
 			}
 
-			// Create and append each dynamic dropdown to the sections
+			// Use the flag as a key to track dropdown selections
 			sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
 				Name:    option.Description, // Adjust name based on flags
+				Command: cmdPrefix(fmt.Sprintf("select_dynamic %s", option.Flags[0])), // Handle dynamic dropdown
 				OptionGroups: []api.OptionGroup{
 					{
 						Name:    option.Description,
 						Options: dropdownOptions,
 					},
 				},
+				// InitialOption: &api.OptionItem{
+				// 	Name:  state[option.Flags[0]], // Fetch previous selection from state
+				// 	Value: state[option.Flags[0]],
+				// },
 			})
 		}
 	}
 
-	code := fmt.Sprintf("run %s", firstSelection)
-	sections = append(sections, api.Section{
-		Base: api.Base{
-			Body: api.Body{
-				CodeBlock: code,
+	// If all selections are made, show the run button
+	if allSelectionsMade(state, scriptOutput.Options) {
+		code := buildFinalCommand(state)
+		sections = append(sections, api.Section{
+			Base: api.Base{
+				Body: api.Body{
+					CodeBlock: code,
+				},
 			},
-		},
-		Buttons: []api.Button{
-			btnBuilder.ForCommandWithoutDesc("Run command", code, api.ButtonStylePrimary),
-		},
-	})
+			Buttons: []api.Button{
+				btnBuilder.ForCommandWithoutDesc("Run command", code, api.ButtonStylePrimary),
+			},
+		})
+	}
 
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: "You've selected from the first dropdown. Now select from the second dropdown.",
+				Plaintext: "You've selected from the dropdowns. Now run the command if ready.",
 			},
 			Sections:          sections,
 			OnlyVisibleForYou: true,
@@ -264,7 +280,26 @@ func showBothSelects(firstSelection) executor.ExecuteOutput {
 	}
 }
 
+// Helper function to check if all selections are made
+func allSelectionsMade(state map[string]string, options []Option) bool {
+	for _, option := range options {
+		if state[option.Flags[0]] == "" {
+			return false
+		}
+	}
+	return true
+}
 
+// Helper function to build the final command based on all selections
+func buildFinalCommand(state map[string]string) string {
+	var commandParts []string
+	for key, value := range state {
+		if value != "" {
+			commandParts = append(commandParts, value)
+		}
+	}
+	return fmt.Sprintf("run %s", strings.Join(commandParts, " "))
+}
 
 func (MsgExecutor) Help(context.Context) (api.Message, error) {
 	msg := description
