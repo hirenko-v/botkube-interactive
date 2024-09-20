@@ -7,6 +7,7 @@ import (
 	"strings"
 	"log"
 	"os/exec"
+	"encoding/json"
 
 	"github.com/hashicorp/go-plugin"
 	"github.com/kubeshop/botkube/pkg/api"
