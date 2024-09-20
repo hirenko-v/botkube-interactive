@@ -240,16 +240,23 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 
 	// Only add the button if both selections are made
 	if firstSelection != "" && secondSelection != "" {
+
 		// Run the script to get dynamic options
 		scriptOutput, err := runScript(firstSelection)
 		if err != nil {
 			log.Fatalf("Error running script: %v", err)
 		}
+		// Convert the script output options to a JSON string for displaying in the code block.
+		optionsJSON, err := json.MarshalIndent(scriptOutput.Options, "", "  ")
+		if err != nil {
+			log.Fatalf("Error converting options to JSON: %v", err)
+		}
+
 		code := fmt.Sprintf("run %s %s", firstSelection, secondSelection)
 		sections = append(sections, api.Section{
 			Base: api.Base{
 				Body: api.Body{
-					CodeBlock: scriptOutput.Options,
+					CodeBlock: string(optionsJSON),
 				},
 			},
 			Buttons: []api.Button{
