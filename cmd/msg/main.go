@@ -220,8 +220,7 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 		},
 	}
 
-	// Clear second selection if the first selection has changed
-	var secondSelectGenerated bool
+	// Check if first selection is made
 	if firstSelection != "" {
 		// Run the script to get dynamic options based on the first selection
 		scriptOutput, err := runScript(firstSelection)
@@ -247,25 +246,18 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 			// Create and append each dynamic dropdown to the sections
 			sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
 				Name:    option.Description, // Adjust name based on flags
-				Command: cmdPrefix("select_second"), // Second selection handler
 				OptionGroups: []api.OptionGroup{
 					{
 						Name:    option.Description,
 						Options: dropdownOptions,
 					},
 				},
-				// Set secondSelection to "" after first is changed
-				InitialOption: &api.OptionItem{
-					Name:  secondSelection,
-					Value: secondSelection,
-				},
 			})
-			secondSelectGenerated = true
 		}
 	}
 
 	// Only add the button if both selections are made
-	if firstSelection != "" && secondSelectGenerated && secondSelection != "" {
+	if firstSelection != "" && secondSelection != "" {
 		code := fmt.Sprintf("run %s %s", firstSelection, secondSelection)
 		sections = append(sections, api.Section{
 			Base: api.Base{
