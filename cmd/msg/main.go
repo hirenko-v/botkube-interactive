@@ -61,9 +61,28 @@ func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exec
 		// Store the selection from the second dropdown and show the button
 		e.state[sessionID]["second"] = value
 		return showBothSelects(e.state[sessionID]["first"], e.state[sessionID]["second"]), nil
+	case "run_command":
+		// Handle the command execution after both selections
+		first := e.state[sessionID]["first"]
+		second := e.state[sessionID]["second"]
+		if first != "" && second != "" {
+			return executor.ExecuteOutput{
+				Message: api.NewCodeBlockMessage(fmt.Sprintf("Running command with: First = %s, Second = %s", first, second), true),
+			}, nil
+		}
+		return executor.ExecuteOutput{
+			Message: api.NewCodeBlockMessage("Both selections must be made before running the command.", true),
+		}, nil
 	}
 
-	return executor.ExecuteOutput{}, nil
+	if strings.TrimSpace(in.Command) == pluginName {
+		return initialMessages(), nil
+	}
+
+	msg := fmt.Sprintf("Plain command: %s", in.Command)
+	return executor.ExecuteOutput{
+		Message: api.NewCodeBlockMessage(msg, true),
+	}, nil
 }
 
 // parseCommand parses the input command into action and value
@@ -179,8 +198,8 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 							},
 						},
 						InitialOption: &api.OptionItem{
-							Name:  secondSelection,
-							Value: secondSelection,
+							Name:  "update-chrome-data-incentives-stack",
+							Value: "update-chrome-data-incentives-stack",
 						},
 					},
 				},
