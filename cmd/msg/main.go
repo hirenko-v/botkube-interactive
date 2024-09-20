@@ -222,11 +222,6 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 
 	// Show second dropdown if the first selection is made
 	if firstSelection != "" {
-		// Run the script to get dynamic options
-		scriptOutput, err := runScript(firstSelection)
-		if err != nil {
-			log.Fatalf("Error running script: %v", err)
-		}
 
 		sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
 			Name:    "second",
@@ -245,6 +240,11 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 
 	// Only add the button if both selections are made
 	if firstSelection != "" && secondSelection != "" {
+		// Run the script to get dynamic options
+		scriptOutput, err := runScript(firstSelection)
+		if err != nil {
+			log.Fatalf("Error running script: %v", err)
+		}
 		code := fmt.Sprintf("run %s %s", firstSelection, secondSelection)
 		sections = append(sections, api.Section{
 			Base: api.Base{
