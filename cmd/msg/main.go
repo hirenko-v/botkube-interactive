@@ -199,8 +199,8 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 				{
 					Name: "Second Group",
 					Options: []api.OptionItem{
-						{Name: "-i true", Value: "-i true"},
-						{Name: "-i false", Value: "-i true"},
+						{Name: "true", Value: "-i true"},
+						{Name: "false", Value: "-i false"},
 					},
 				},
 			},
