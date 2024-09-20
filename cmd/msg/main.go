@@ -239,7 +239,7 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 		    //         })
 			// 	}
 			// }
-
+			fmt.Sprintf(option.Flags[0])
             // Add each dynamic dropdown to the section
 			sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
 				Name:    "second",
