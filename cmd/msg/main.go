@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"log"
+	"os/exec"
 
 	"github.com/hashicorp/go-plugin"
 	"github.com/kubeshop/botkube/pkg/api"
@@ -23,6 +24,34 @@ var version = "dev"
 // MsgExecutor implements the Botkube executor plugin interface.
 type MsgExecutor struct {
 	state map[string]map[string]string // State to keep track of selections
+}
+
+// JSON structure for the script output
+type Option struct {
+	Flags       []string `json:"flags"`
+	Description string   `json:"description"`
+	Values      []string `json:"values,omitempty"`
+	Default     bool     `json:"default,omitempty"`
+}
+
+type ScriptOutput struct {
+	Options []Option `json:"options"`
+}
+
+// Helper function to run the shell script and get the JSON output
+func runScript(scriptName string) (*ScriptOutput, error) {
+	cmd := exec.Command("/scripts/" + scriptName + "--json-help") // Assuming scripts are stored in /scripts
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("failed to run script: %v", err)
+	}
+
+	// Parse JSON output
+	var result ScriptOutput
+	if err := json.Unmarshal(output, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse script output: %v", err)
+	}
+	return &result, nil
 }
 
 // Metadata returns details about the Msg plugin.
@@ -140,7 +169,7 @@ func initialMessages() executor.ExecuteOutput {
 								Command: cmdPrefix("select_first"),
 								OptionGroups: []api.OptionGroup{
 									{
-										Name:    "Files in /scripts",
+										Name:    "Job Name",
 										Options: fileList, // Use the retrieved file list
 									},
 								},
@@ -157,81 +186,96 @@ func initialMessages() executor.ExecuteOutput {
 
 // showBothSelects displays the second dropdown after the first one is selected and adds a "Run command" button if both selections are made.
 func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOutput {
-	fileList, err := getFileOptions()
-	if err != nil {
-		log.Fatalf("Error retrieving file options: %v", err)
-	}
-	btnBuilder := api.NewMessageButtonBuilder()
-	cmdPrefix := func(cmd string) string {
-		return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
-	}
+    fileList, err := getFileOptions()
+    if err != nil {
+        log.Fatalf("Error retrieving file options: %v", err)
+    }
+    btnBuilder := api.NewMessageButtonBuilder()
+    cmdPrefix := func(cmd string) string {
+        return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
+    }
 
-	sections := []api.Section{
-		{
-			Selects: api.Selects{
-				ID: "select-id",
-				Items: []api.Select{
-					{
-						Name:    "first",
-						Command: cmdPrefix("select_first"),
-						OptionGroups: []api.OptionGroup{
-							{
-								Name:    "Files in /scripts",
-								Options: fileList,
-							},
-						},
-						InitialOption: &api.OptionItem{
-							Name:  firstSelection,
-							Value: firstSelection,
-						},
-					},
-				},
-			},
-		},
-	}
+    sections := []api.Section{
+        {
+            Selects: api.Selects{
+                ID: "select-id",
+                Items: []api.Select{
+                    {
+                        Name:    "first",
+                        Command: cmdPrefix("select_first"),
+                        OptionGroups: []api.OptionGroup{
+                            {
+                                Name:    "Job Name",
+                                Options: fileList,
+                            },
+                        },
+                        InitialOption: &api.OptionItem{
+                            Name:  firstSelection,
+                            Value: firstSelection,
+                        },
+                    },
+                },
+            },
+        },
+    }
 
-	// Show second dropdown if the first selection is made
-	if firstSelection != "" {
-		sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
-			Name:    "second",
-			Command: cmdPrefix("select_second"),
-			OptionGroups: []api.OptionGroup{
-				{
-					Name: "Second Group",
-					Options: []api.OptionItem{
-						{Name: "true", Value: "-i true"},
-						{Name: "false", Value: "-i false"},
-					},
-				},
-			},
-		})
-	}
+    // Show second dropdowns based on the script output if the first selection is made
+    if firstSelection != "" {
+        // Run the script to get dynamic options
+        scriptOutput, err := runScript(firstSelection)
+        if err != nil {
+            log.Fatalf("Error running script: %v", err)
+        }
 
-	// Only add the button if both selections are made
-	if firstSelection != "" && secondSelection != "" {
-		code := fmt.Sprintf("run %s %s", firstSelection, secondSelection)
-		sections = append(sections, api.Section{
-			Base: api.Base{
-				Body: api.Body{
-					CodeBlock: code,
-				},
-			},
-			Buttons: []api.Button{
-				btnBuilder.ForCommandWithoutDesc("Run command", code, api.ButtonStylePrimary),
-			},
-		})
-	}
+        // Create multiple dropdowns based on the options in the script output
+        for _, option := range scriptOutput.Options {
+            var dropdownOptions []api.OptionItem
+            for _, value := range option.Values {
+                dropdownOptions = append(dropdownOptions, api.OptionItem{
+                    Name:  value,
+                    Value: fmt.Sprintf("%s %s", option.Flags[0], value), // Using the first flag for the command
+                })
+            }
 
-	return executor.ExecuteOutput{
-		Message: api.Message{
-			BaseBody: api.Body{
-				Plaintext: "You've selected from the first dropdown. Now select from the second dropdown.",
-			},
-			Sections:          sections,
-			OnlyVisibleForYou: true,
-			ReplaceOriginal:   true,
-		},
-	}
+            // Add each dynamic dropdown to the section
+            sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
+                Name:    option.Description, // Use the option description as the dropdown name
+                Command: cmdPrefix("select_second"),
+                OptionGroups: []api.OptionGroup{
+                    {
+                        Name:    option.Description, // Use the option description as the group name
+                        Options: dropdownOptions,    // Use the dynamically created options
+                    },
+                },
+            })
+        }
+    }
+
+    // Only add the "Run command" button if both selections are made
+    if firstSelection != "" && secondSelection != "" {
+        code := fmt.Sprintf("run %s %s", firstSelection, secondSelection)
+        sections = append(sections, api.Section{
+            Base: api.Base{
+                Body: api.Body{
+                    CodeBlock: code,
+                },
+            },
+            Buttons: []api.Button{
+                btnBuilder.ForCommandWithoutDesc("Run command", code, api.ButtonStylePrimary),
+            },
+        })
+    }
+
+    return executor.ExecuteOutput{
+        Message: api.Message{
+            BaseBody: api.Body{
+                Plaintext: "You've selected from the first dropdown. Now select from the second group of dropdowns.",
+            },
+            Sections:          sections,
+            OnlyVisibleForYou: true,
+            ReplaceOriginal:   true,
+        },
+    }
 }
 
 
