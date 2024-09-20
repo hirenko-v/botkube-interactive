@@ -199,8 +199,8 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 				{
 					Name: "Second Group",
 					Options: []api.OptionItem{
-						{Name: "true", Value: "-i true"},
-						{Name: "false", Value: "-i false"},
+						{Name: "update-chrome-data-incentives-stack", Value: "update-chrome-data-incentives-stack"},
+						{Name: "botkube", Value: "botkube"},
 					},
 				},
 			},
