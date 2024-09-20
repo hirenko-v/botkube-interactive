@@ -254,7 +254,6 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 				},
 			},
 		})
-	}
 	
 
 		// sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
