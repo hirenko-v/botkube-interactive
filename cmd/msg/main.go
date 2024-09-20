@@ -3,12 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/hashicorp/go-plugin"
+	"github.com/kubeshop/botkube/internal/executor/kubectl"
 	"github.com/kubeshop/botkube/pkg/api"
 	"github.com/kubeshop/botkube/pkg/api/executor"
-	"github.com/kubeshop/botkube/internal/executor/kubectl"
 )
 
 const (
@@ -61,6 +62,8 @@ func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exec
 		e.state[sessionID]["second"] = value
 		return showBothSelects(e.state[sessionID]["first"], e.state[sessionID]["second"]), nil
 	}
+
+	return executor.ExecuteOutput{}, nil
 }
 
 // parseCommand parses the input command into action and value
@@ -157,8 +160,8 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 							},
 						},
 						InitialOption: &api.OptionItem{
-							Name:  "update-chrome-data-incentives-stack",
-							Value: "update-chrome-data-incentives-stack",
+							Name:  secondSelection,
+							Value: secondSelection,
 						},
 					},
 				},
@@ -168,11 +171,19 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 
 	// Only add the button if both selections are made
 	if firstSelection != "" && secondSelection != "" {
+//
+		kubectlExecutor := kubectl.NewExecutor(version, kubectl.NewBinaryRunner())
+		command := executor.ExecuteCommand{
+			Command: fmt.Sprintf("get %s -n %s", firstSelection, secondSelection),
+		}
+		ctx := context.Background()
+		response := kubectlExecutor.Execute(ctx, command)
+//
 		code := fmt.Sprintf("kubectl get %s -n %s", firstSelection, secondSelection)
 		sections = append(sections, api.Section{
 			Base: api.Base{
 				Body: api.Body{
-					CodeBlock: code,
+					CodeBlock: response.Output,
 				},
 			},
 			Buttons: []api.Button{
