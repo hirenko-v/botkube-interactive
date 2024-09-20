@@ -83,6 +83,7 @@ func initialMessages() executor.ExecuteOutput {
 	if err != nil {
 		log.Fatalf("Failed to open directory: %v", err)
 	}
+
 	// Create a slice to store file names
 	var fileList []string
 
@@ -93,6 +94,9 @@ func initialMessages() executor.ExecuteOutput {
 		}
 	}
 
+	// Join the list of files into a single string
+	fileListString := strings.Join(fileList, ", ")
+
 	cmdPrefix := func(cmd string) string {
 		return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
 	}
@@ -100,7 +104,7 @@ func initialMessages() executor.ExecuteOutput {
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: fmt.Println("Files in /scripts:", fileList),
+				Plaintext: fmt.Sprintf("Files in /scripts: %s", fileListString),
 			},
 			Sections: []api.Section{
 				{
