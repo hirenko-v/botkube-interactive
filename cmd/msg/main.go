@@ -240,18 +240,6 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 		}
 
 		var initialOption *api.OptionItem
-		if val, exists := state[option.Flags[0]]; exists {
-			initialOption = &api.OptionItem{
-				Name:  val,
-				Value: val,
-			}
-		} else {
-			// Clear the option if the key does not exist
-			initialOption = &api.OptionItem{
-				Name:  "", // Clear the field
-				Value: "", // Clear the field
-			}
-		}
 
 		// Use the flag as a key to track dropdown selections
 		sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
@@ -263,7 +251,11 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 					Options: dropdownOptions,
 				},
 			},
-			InitialOption: initialOption,
+			InitialOption: func() *api.OptionItem {
+				if val, exists := state[option.Flags[0]]; exists && val != "" {
+					return &api.OptionItem{Name: val, Value: val}
+				}
+				return nil 
 		})
 	}
 
