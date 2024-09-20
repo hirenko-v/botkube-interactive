@@ -155,15 +155,15 @@ func initialMessages() executor.ExecuteOutput {
 	}
 }
 
+// showBothSelects displays the second dropdown after the first one is selected and adds a "Run command" button if both selections are made.
 func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOutput {
-	btnBuilder := api.NewMessageButtonBuilder()
-	cmdPrefix := func(cmd string) string {
-		return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
-	}
-
 	fileList, err := getFileOptions()
 	if err != nil {
 		log.Fatalf("Error retrieving file options: %v", err)
+	}
+	btnBuilder := api.NewMessageButtonBuilder()
+	cmdPrefix := func(cmd string) string {
+		return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
 	}
 
 	// Initialize the sections array
@@ -177,8 +177,8 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 						Command: cmdPrefix("select_first"),
 						OptionGroups: []api.OptionGroup{
 							{
-								Name:    "Files in /scripts",
-								Options: fileList, // Use the same file list
+								Name: "Group 1",
+								Options: fileList,
 							},
 						},
 						InitialOption: &api.OptionItem{
@@ -197,10 +197,6 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 									{Name: "botkube", Value: "botkube"},
 								},
 							},
-						},
-						InitialOption: &api.OptionItem{
-							Name:  secondSelection,
-							Value: secondSelection,
 						},
 					},
 				},
