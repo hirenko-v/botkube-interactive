@@ -239,8 +239,6 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 			})
 		}
 
-		var initialOption *api.OptionItem
-
 		// Use the flag as a key to track dropdown selections
 		sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
 			Name:    option.Description, // Adjust name based on flags
