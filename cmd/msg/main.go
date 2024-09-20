@@ -199,21 +199,17 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 				{
 					Name: "Second Group",
 					Options: []api.OptionItem{
-						{Name: "update-chrome-data-incentives-stack", Value: "update-chrome-data-incentives-stack"},
-						{Name: "botkube", Value: "botkube"},
+						{Name: "true", Value: "-i true"},
+						{Name: "false", Value: "-i false"},
 					},
 				},
-			},
-			InitialOption: &api.OptionItem{
-				Name:  secondSelection,
-				Value: secondSelection,
 			},
 		})
 	}
 
 	// Only add the button if both selections are made
 	if firstSelection != "" && secondSelection != "" {
-		code := fmt.Sprintf("kubectl get %s -n %s", firstSelection, secondSelection)
+		code := fmt.Sprintf("run %s -n %s", firstSelection, secondSelection)
 		sections = append(sections, api.Section{
 			Base: api.Base{
 				Body: api.Body{
