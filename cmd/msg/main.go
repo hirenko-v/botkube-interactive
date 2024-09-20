@@ -86,23 +86,7 @@ func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exec
 	case "select_first":
 		// Store the selection from the first dropdown
 		e.state[sessionID]["first"] = value
-		return showBothSelects(e.state[sessionID]["first"], e.state[sessionID]["second"]), nil
-	case "select_second":
-		// Store the selection from the second dropdown and show the button
-		e.state[sessionID]["second"] = value
-		return showBothSelects(e.state[sessionID]["first"], e.state[sessionID]["second"]), nil
-	case "run_command":
-		// Handle the command execution after both selections
-		first := e.state[sessionID]["first"]
-		second := e.state[sessionID]["second"]
-		if first != "" && second != "" {
-			return executor.ExecuteOutput{
-				Message: api.NewCodeBlockMessage(fmt.Sprintf("Running command with: First = %s, Second = %s", first, second), true),
-			}, nil
-		}
-		return executor.ExecuteOutput{
-			Message: api.NewCodeBlockMessage("Both selections must be made before running the command.", true),
-		}, nil
+		return showBothSelects(e.state[sessionID]["first"], nil
 	}
 
 	if strings.TrimSpace(in.Command) == pluginName {
@@ -186,7 +170,7 @@ func initialMessages() executor.ExecuteOutput {
 }
 
 // showBothSelects displays the second dropdown after the first one is selected and adds a "Run command" button if both selections are made.
-func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOutput {
+func showBothSelects(firstSelection) executor.ExecuteOutput {
 	fileList, err := getFileOptions()
 	if err != nil {
 		log.Fatalf("Error retrieving file options: %v", err)
@@ -256,20 +240,17 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 		}
 	}
 
-	// Only add the button if both selections are made
-	if firstSelection != "" && secondSelection != "" {
-		code := fmt.Sprintf("run %s %s", firstSelection, secondSelection)
-		sections = append(sections, api.Section{
-			Base: api.Base{
-				Body: api.Body{
-					CodeBlock: code,
-				},
+	code := fmt.Sprintf("run %s", firstSelection)
+	sections = append(sections, api.Section{
+		Base: api.Base{
+			Body: api.Body{
+				CodeBlock: code,
 			},
-			Buttons: []api.Button{
-				btnBuilder.ForCommandWithoutDesc("Run command", code, api.ButtonStylePrimary),
-			},
-		})
-	}
+		},
+		Buttons: []api.Button{
+			btnBuilder.ForCommandWithoutDesc("Run command", code, api.ButtonStylePrimary),
+		},
+	})
 
 	return executor.ExecuteOutput{
 		Message: api.Message{
