@@ -244,12 +244,15 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
             sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
                 Name:    "second",
                 Command: cmdPrefix("select_second"),
-                OptionGroups: []api.OptionGroup{
-                    {
-                        Name:    "Second Group", // Use the option description as the group name
-                        Options: dropdownOptions,    // Use the dynamically created options
-                    },
-                },
+				OptionGroups: []api.OptionGroup{
+					{
+						Name: "Second Group",
+						Options: []api.OptionItem{
+							{Name: "true", Value: "-i true"},
+							{Name: "false", Value: "-i false"},
+						},
+					},
+				},
             })
         }
 
