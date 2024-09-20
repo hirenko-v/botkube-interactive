@@ -41,7 +41,8 @@ type ScriptOutput struct {
 
 // Helper function to run the shell script and get the JSON output
 func runScript(scriptName string) (*ScriptOutput, error) {
-	cmd := exec.Command("sh", "/scripts/update-chrome-data-incentives-stack", "--json-help")
+	cmd := exec.Command("sh", fmt.Sprintf("/scripts/%s", scriptName), "--json-help")
+
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("failed to run script: %v", err)
