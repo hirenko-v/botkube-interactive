@@ -229,32 +229,33 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 			log.Fatalf("Error running script: %v", err)
 		}
        // Create multiple dropdowns based on the options in the script output
-        for _, option := range scriptOutput.Options {
-            // var dropdownOptions []api.OptionItem
-			// if option.Flags[0] != "-h" {
-			// 	for _, value := range option.Values {
-		    //         dropdownOptions = append(dropdownOptions, api.OptionItem{
-		    //             Name:  value,
-		    //             Value: value,
-		    //         })
-			// 	}
-			// }
-			fmt.Sprintf(option.Flags[0])
-            // Add each dynamic dropdown to the section
-			sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
-				Name:    "second",
-				Command: cmdPrefix("select_second"),
-				OptionGroups: []api.OptionGroup{
-					{
-						Name: "Second Group",
-						Options: []api.OptionItem{
-							{Name: "true", Value: "-i true"},
-							{Name: "false", Value: "-i false"},
-						},
-					},
-				},
+	   for _, option := range scriptOutput.Options {
+		// Skip the help options (-h, --help)
+		if option.Flags[0] == "-h" {
+			continue
+		}
+	
+		var dropdownOptions []api.OptionItem
+		for _, value := range option.Values {
+			dropdownOptions = append(dropdownOptions, api.OptionItem{
+				Name:  value,
+				Value: value, // Use the value directly if it's what you need
 			})
-        }
+		}
+	
+		// Create and append each dynamic dropdown to the sections
+		sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
+			Name:    option.Flags[0], // You can adjust the Name to reflect the flags
+			Command: cmdPrefix("select_second"), // Adjust command if needed
+			OptionGroups: []api.OptionGroup{
+				{
+					Name:    fmt.Sprintf("%s Options", option.Flags[0]), // Dynamic group name based on flag
+					Options: dropdownOptions, // Dynamically created options
+				},
+			},
+		})
+	}
+	
 
 		// sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
 		// 	Name:    "second",
