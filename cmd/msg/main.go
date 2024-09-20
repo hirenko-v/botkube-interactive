@@ -242,11 +242,11 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 
             // Add each dynamic dropdown to the section
             sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
-                Name:    option.Flags[0],
+                Name:    "second",
                 Command: cmdPrefix("select_second"),
                 OptionGroups: []api.OptionGroup{
                     {
-                        Name:    option.Description, // Use the option description as the group name
+                        Name:    "Second Group", // Use the option description as the group name
                         Options: dropdownOptions,    // Use the dynamically created options
                     },
                 },
