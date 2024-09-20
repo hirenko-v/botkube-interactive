@@ -230,30 +230,31 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 		}
        // Create multiple dropdowns based on the options in the script output
 	   for _, option := range scriptOutput.Options {
-		// Skip the help options (-h, --help)
-		if option.Flags[0] == "-h" {
-			continue
-		}
-	
-		var dropdownOptions []api.OptionItem
-		for _, value := range option.Values {
-			dropdownOptions = append(dropdownOptions, api.OptionItem{
-				Name:  value,
-				Value: value, // Use the value directly if it's what you need
+			// Skip the help options (-h, --help)
+			if option.Flags[0] == "-h" {
+				continue
+			}
+		
+			var dropdownOptions []api.OptionItem
+			for _, value := range option.Values {
+				dropdownOptions = append(dropdownOptions, api.OptionItem{
+					Name:  value,
+					Value: value, // Use the value directly if it's what you need
+				})
+			}
+		
+			// Create and append each dynamic dropdown to the sections
+			sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
+				Name:    option.Flags[0], // You can adjust the Name to reflect the flags
+				Command: cmdPrefix("select_second"), // Adjust command if needed
+				OptionGroups: []api.OptionGroup{
+					{
+						Name:    fmt.Sprintf("%s Options", option.Flags[0]), // Dynamic group name based on flag
+						Options: dropdownOptions, // Dynamically created options
+					},
+				},
 			})
 		}
-	
-		// Create and append each dynamic dropdown to the sections
-		sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
-			Name:    option.Flags[0], // You can adjust the Name to reflect the flags
-			Command: cmdPrefix("select_second"), // Adjust command if needed
-			OptionGroups: []api.OptionGroup{
-				{
-					Name:    fmt.Sprintf("%s Options", option.Flags[0]), // Dynamic group name based on flag
-					Options: dropdownOptions, // Dynamically created options
-				},
-			},
-		})
 	
 
 		// sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
