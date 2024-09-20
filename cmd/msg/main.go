@@ -230,20 +230,20 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 		}
        // Create multiple dropdowns based on the options in the script output
         for _, option := range scriptOutput.Options {
-            var dropdownOptions []api.OptionItem
-			if option.Flags[0] != "-h" {
-				for _, value := range option.Values {
-		            dropdownOptions = append(dropdownOptions, api.OptionItem{
-		                Name:  value,
-		                Value: value,
-		            })
-				}
-			}
+            // var dropdownOptions []api.OptionItem
+			// if option.Flags[0] != "-h" {
+			// 	for _, value := range option.Values {
+		    //         dropdownOptions = append(dropdownOptions, api.OptionItem{
+		    //             Name:  value,
+		    //             Value: value,
+		    //         })
+			// 	}
+			// }
 
             // Add each dynamic dropdown to the section
-            sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
-                Name:    "second",
-                Command: cmdPrefix("select_second"),
+			sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
+				Name:    "second",
+				Command: cmdPrefix("select_second"),
 				OptionGroups: []api.OptionGroup{
 					{
 						Name: "Second Group",
@@ -253,7 +253,7 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 						},
 					},
 				},
-            })
+			})
         }
 
 		// sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
