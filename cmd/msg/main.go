@@ -229,15 +229,16 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 			log.Fatalf("Error running script: %v", err)
 		}
 
-    //    // Create multiple dropdowns based on the options in the script output
-    //     for _, option := range scriptOutput.Options {
-    //         var dropdownOptions []api.OptionItem
-    //         for _, value := range option.Values {
+       // Create multiple dropdowns based on the options in the script output
+        for _, option := range scriptOutput.Options {
+            // var dropdownOptions []api.OptionItem
+            for _, value := range option.Values {
+				fmt.Sprintf(value)
     //             dropdownOptions = append(dropdownOptions, api.OptionItem{
     //                 Name:  value,
     //                 Value: value,
     //             })
-    //         }
+            }
 
     //         // Add each dynamic dropdown to the section
     //         sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
@@ -250,7 +251,7 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
     //                 },
     //             },
     //         })
-    //     }
+        }
 
 		sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
 			Name:    "second",
