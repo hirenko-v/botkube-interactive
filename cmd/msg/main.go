@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/go-plugin"
 	"github.com/kubeshop/botkube/pkg/api"
 	"github.com/kubeshop/botkube/pkg/api/executor"
+	"github.com/kubeshop/botkube/internal/executor/kubectl"
 )
 
 const (
@@ -60,15 +61,6 @@ func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exec
 		e.state[sessionID]["second"] = value
 		return showBothSelects(e.state[sessionID]["first"], e.state[sessionID]["second"]), nil
 	}
-
-	if strings.TrimSpace(in.Command) == pluginName {
-		return initialMessages(), nil
-	}
-
-	msg := fmt.Sprintf("Plain command: %s", in.Command)
-	return executor.ExecuteOutput{
-		Message: api.NewCodeBlockMessage(msg, true),
-	}, nil
 }
 
 // parseCommand parses the input command into action and value
