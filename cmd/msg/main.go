@@ -235,34 +235,6 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 	}
 }
 
-	// Only add the button if both selections are made
-	if firstSelection != "" && secondSelection != "" {
-		code := fmt.Sprintf("kubectl get %s -n %s", firstSelection, secondSelection)
-		sections = append(sections, api.Section{
-			Base: api.Base{
-				Body: api.Body{
-					CodeBlock: code,
-				},
-			},
-			Buttons: []api.Button{
-				btnBuilder.ForCommandWithoutDesc("Run command", code, api.ButtonStylePrimary),
-			},
-		})
-	}
-
-	return executor.ExecuteOutput{
-		Message: api.Message{
-			BaseBody: api.Body{
-				Plaintext: "You've selected from the first dropdown. Now select from the second dropdown.",
-			},
-			Sections:          sections,
-			OnlyVisibleForYou: true,
-			ReplaceOriginal:   true,
-		},
-	}
-}
-
-
 func (MsgExecutor) Help(context.Context) (api.Message, error) {
 	msg := description
 	msg += fmt.Sprintf("\nJust type `%s %s`", api.MessageBotNamePlaceholder, pluginName)
