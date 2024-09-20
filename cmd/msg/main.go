@@ -234,7 +234,7 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
             // var dropdownOptions []api.OptionItem
 			if option.Flags[0] != "-h" {
 				for _, value := range option.Values {
-					test := value
+					test = value
 		//             dropdownOptions = append(dropdownOptions, api.OptionItem{
 		//                 Name:  value,
 		//                 Value: value,
