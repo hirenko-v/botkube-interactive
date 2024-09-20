@@ -239,7 +239,7 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 			for _, value := range option.Values {
 				dropdownOptions = append(dropdownOptions, api.OptionItem{
 					Name:  value,
-					Value: value, // Use the value directly if it's what you need
+					Value: fmt.Sprintf("%s %s",option.Flags[0], value]),
 				})
 			}
 		
@@ -249,7 +249,7 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 				Command: cmdPrefix("select_second"), // Adjust command if needed
 				OptionGroups: []api.OptionGroup{
 					{
-						Name:    fmt.Sprintf("%s Options", option.Flags[0]), // Dynamic group name based on flag
+						Name:    option.Description, // Dynamic group name based on flag
 						Options: dropdownOptions, // Dynamically created options
 					},
 				},
