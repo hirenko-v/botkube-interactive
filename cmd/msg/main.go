@@ -248,10 +248,10 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 					Options: dropdownOptions,
 				},
 			},
-			InitialOption: &api.OptionItem{
-				Name:  state[option.Flags[0]], // Fetch previous selection from state
-				Value: state[option.Flags[0]],
-			},
+			// InitialOption: &api.OptionItem{
+			// 	Name:  state[option.Flags[0]], // Fetch previous selection from state
+			// 	Value: state[option.Flags[0]],
+			// },
 		})
 	}
 
