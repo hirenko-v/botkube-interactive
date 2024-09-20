@@ -239,7 +239,7 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 			for _, value := range option.Values {
 				dropdownOptions = append(dropdownOptions, api.OptionItem{
 					Name:  value,
-					Value: fmt.Sprintf("%s %s",option.Flags[0], value]),
+					Value: fmt.Sprintf("%s %s",option.Flags[0], value),
 				})
 			}
 		
