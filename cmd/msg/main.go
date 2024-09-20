@@ -187,7 +187,6 @@ func initialMessages() executor.ExecuteOutput {
 
 // showBothSelects displays the second dropdown after the first one is selected and adds a "Run command" button if both selections are made.
 func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOutput {
-	test := "123"
 	fileList, err := getFileOptions()
 	if err != nil {
 		log.Fatalf("Error retrieving file options: %v", err)
@@ -231,43 +230,42 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 		}
        // Create multiple dropdowns based on the options in the script output
         for _, option := range scriptOutput.Options {
-            // var dropdownOptions []api.OptionItem
+            var dropdownOptions []api.OptionItem
 			if option.Flags[0] != "-h" {
 				for _, value := range option.Values {
-					test = value
-		//             dropdownOptions = append(dropdownOptions, api.OptionItem{
-		//                 Name:  value,
-		//                 Value: value,
-		//             })
+		            dropdownOptions = append(dropdownOptions, api.OptionItem{
+		                Name:  value,
+		                Value: value,
+		            })
 				}
 			}
 
-    //         // Add each dynamic dropdown to the section
-    //         sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
-    //             Name:    option.Flags[0],
-    //             // Command: cmdPrefix("select_second"),
-    //             OptionGroups: []api.OptionGroup{
-    //                 {
-    //                     Name:    option.Description, // Use the option description as the group name
-    //                     Options: dropdownOptions,    // Use the dynamically created options
-    //                 },
-    //             },
-    //         })
+            // Add each dynamic dropdown to the section
+            sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
+                Name:    option.Flags[0],
+                Command: cmdPrefix("select_second"),
+                OptionGroups: []api.OptionGroup{
+                    {
+                        Name:    option.Description, // Use the option description as the group name
+                        Options: dropdownOptions,    // Use the dynamically created options
+                    },
+                },
+            })
         }
 
-		sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
-			Name:    "second",
-			Command: cmdPrefix("select_second"),
-			OptionGroups: []api.OptionGroup{
-				{
-					Name: "Second Group",
-					Options: []api.OptionItem{
-						{Name: "true", Value: "-i true"},
-						{Name: "false", Value: "-i false"},
-					},
-				},
-			},
-		})
+		// sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
+		// 	Name:    "second",
+		// 	Command: cmdPrefix("select_second"),
+		// 	OptionGroups: []api.OptionGroup{
+		// 		{
+		// 			Name: "Second Group",
+		// 			Options: []api.OptionItem{
+		// 				{Name: "true", Value: "-i true"},
+		// 				{Name: "false", Value: "-i false"},
+		// 			},
+		// 		},
+		// 	},
+		// })
     }
 
 
@@ -279,7 +277,7 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 		sections = append(sections, api.Section{
 			Base: api.Base{
 				Body: api.Body{
-					CodeBlock: test,
+					CodeBlock: code,
 				},
 			},
 			Buttons: []api.Button{
