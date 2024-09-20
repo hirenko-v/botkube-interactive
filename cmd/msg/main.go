@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-plugin"
-	"github.com/kubeshop/botkube/internal/executor/kubectl"
 	"github.com/kubeshop/botkube/pkg/api"
 	"github.com/kubeshop/botkube/pkg/api/executor"
 )
@@ -172,12 +171,12 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 	// Only add the button if both selections are made
 	if firstSelection != "" && secondSelection != "" {
 //
-		kubectlExecutor := kubectl.NewExecutor(version, kubectl.NewBinaryRunner())
-		command := executor.ExecuteCommand{
-			Command: fmt.Sprintf("get %s -n %s", firstSelection, secondSelection),
-		}
-		ctx := context.Background()
-		response := kubectlExecutor.Execute(ctx, command)
+		// kubectlExecutor := kubectl.NewExecutor(version, kubectl.NewBinaryRunner())
+		// command := executor.ExecuteCommand{
+		// 	Command: fmt.Sprintf("get %s -n %s", firstSelection, secondSelection),
+		// }
+		// ctx := context.Background()
+		// response := kubectlExecutor.Execute(ctx, command)
 //
 		code := fmt.Sprintf("kubectl get %s -n %s", firstSelection, secondSelection)
 		sections = append(sections, api.Section{
