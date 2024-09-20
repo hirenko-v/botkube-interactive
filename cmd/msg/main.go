@@ -135,7 +135,7 @@ func getFileOptions() ([]api.OptionItem, error) {
 
 	var fileList []api.OptionItem
 	for _, file := range files {
-		if !file.IsDir() {
+		if !file.IsDir() && file.Name() != "..data" {
 			fileList = append(fileList, api.OptionItem{
 				Name:  file.Name(),
 				Value: file.Name(),
@@ -166,7 +166,7 @@ func initialMessages() executor.ExecuteOutput {
 						ID: "select-id-1",
 						Items: []api.Select{
 							{
-								Name:    "first",
+								Name:    "Job Name",
 								Command: cmdPrefix("select_first"),
 								OptionGroups: []api.OptionGroup{
 									{
@@ -202,7 +202,7 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 				ID: "select-id",
 				Items: []api.Select{
 					{
-						Name:    "first",
+						Name:   "Job Name",
 						Command: cmdPrefix("select_first"),
 						OptionGroups: []api.OptionGroup{
 							{
@@ -220,63 +220,45 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 		},
 	}
 
-	// Show second dropdown if the first selection is made
+	// Clear second selection if the first selection has changed
 	if firstSelection != "" {
-
-		// Run the script to get dynamic options
+		// Run the script to get dynamic options based on the first selection
 		scriptOutput, err := runScript(firstSelection)
 		if err != nil {
 			log.Fatalf("Error running script: %v", err)
 		}
-       // Create multiple dropdowns based on the options in the script output
-	   for _, option := range scriptOutput.Options {
+
+		// Create multiple dropdowns based on the options in the script output
+		for _, option := range scriptOutput.Options {
 			// Skip the help options (-h, --help)
 			if option.Flags[0] == "-h" {
 				continue
 			}
-		
+
 			var dropdownOptions []api.OptionItem
 			for _, value := range option.Values {
 				dropdownOptions = append(dropdownOptions, api.OptionItem{
 					Name:  value,
-					Value: fmt.Sprintf("%s %s",option.Flags[0], value),
+					Value: fmt.Sprintf("%s %s", option.Flags[0], value),
 				})
 			}
-		
+
 			// Create and append each dynamic dropdown to the sections
 			sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
-				Name:    option.Flags[0], // You can adjust the Name to reflect the flags
-				Command: cmdPrefix("select_second"), // Adjust command if needed
+				Name:    option.Description, // Adjust name based on flags
+				Command: cmdPrefix("select_second"), // Second selection handler
 				OptionGroups: []api.OptionGroup{
 					{
-						Name:    option.Description, // Dynamic group name based on flag
-						Options: dropdownOptions, // Dynamically created options
+						Name:    option.Description,
+						Options: dropdownOptions,
 					},
 				},
 			})
 		}
-	
-
-		// sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
-		// 	Name:    "second",
-		// 	Command: cmdPrefix("select_second"),
-		// 	OptionGroups: []api.OptionGroup{
-		// 		{
-		// 			Name: "Second Group",
-		// 			Options: []api.OptionItem{
-		// 				{Name: "true", Value: "-i true"},
-		// 				{Name: "false", Value: "-i false"},
-		// 			},
-		// 		},
-		// 	},
-		// })
-    }
-
-
+	}
 
 	// Only add the button if both selections are made
 	if firstSelection != "" && secondSelection != "" {
-
 		code := fmt.Sprintf("run %s %s", firstSelection, secondSelection)
 		sections = append(sections, api.Section{
 			Base: api.Base{
