@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"log"
 
 	"github.com/hashicorp/go-plugin"
 	"github.com/kubeshop/botkube/pkg/api"
@@ -79,6 +80,9 @@ func parseCommand(cmd string) (action, value string) {
 func initialMessages() executor.ExecuteOutput {
 	dir := "/scripts"
 	files, err := os.ReadDir(dir)
+	if err != nil {
+		log.Fatalf("Failed to open directory: %v", err)
+	}
 	// Create a slice to store file names
 	var fileList []string
 
@@ -186,7 +190,7 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 		sections = append(sections, api.Section{
 			Base: api.Base{
 				Body: api.Body{
-					CodeBlock: response.Output,
+					CodeBlock: code,
 				},
 			},
 			Buttons: []api.Button{
