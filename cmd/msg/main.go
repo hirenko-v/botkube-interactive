@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
+	"os"
 	"strings"
 
 	"github.com/hashicorp/go-plugin"
@@ -77,6 +77,18 @@ func parseCommand(cmd string) (action, value string) {
 
 // initialMessages shows only the first dropdown.
 func initialMessages() executor.ExecuteOutput {
+	dir := "/scripts"
+	files, err := os.ReadDir(dir)
+	// Create a slice to store file names
+	var fileList []string
+
+	// Iterate over the directory entries and add file names to the slice
+	for _, file := range files {
+		if !file.IsDir() { // Only include files, not directories
+			fileList = append(fileList, file.Name())
+		}
+	}
+
 	cmdPrefix := func(cmd string) string {
 		return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
 	}
@@ -84,7 +96,7 @@ func initialMessages() executor.ExecuteOutput {
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: "Showcases interactive message capabilities. Please select an option from the first dropdown.",
+				Plaintext: fmt.Println("Files in /scripts:", fileList),
 			},
 			Sections: []api.Section{
 				{
@@ -170,14 +182,6 @@ func showBothSelects(firstSelection, secondSelection string) executor.ExecuteOut
 
 	// Only add the button if both selections are made
 	if firstSelection != "" && secondSelection != "" {
-//
-		// kubectlExecutor := kubectl.NewExecutor(version, kubectl.NewBinaryRunner())
-		// command := executor.ExecuteCommand{
-		// 	Command: fmt.Sprintf("get %s -n %s", firstSelection, secondSelection),
-		// }
-		// ctx := context.Background()
-		// response := kubectlExecutor.Execute(ctx, command)
-//
 		code := fmt.Sprintf("kubectl get %s -n %s", firstSelection, secondSelection)
 		sections = append(sections, api.Section{
 			Base: api.Base{
