@@ -252,7 +252,7 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 			},
 			InitialOption: &api.OptionItem{
 				Name: "true",
-				Value: "true"),
+				Value: "true",
 			},
 		})
 	}
