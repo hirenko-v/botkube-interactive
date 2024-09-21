@@ -250,7 +250,7 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 					Options: dropdownOptions,
 				},
 			},
-			InitialOption: nil
+			InitialOption: nil,
 		})
 	}
 
