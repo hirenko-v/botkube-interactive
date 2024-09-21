@@ -243,7 +243,7 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 		// Use the flag as a key to track dropdown selections
 		sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
 			Name:    option.Description, // Adjust name based on flags
-			Command: cmdPrefix(fmt.Sprintf("select_dynamic %s", option.Flags[0])), // Handle dynamic dropdown
+			Command: cmdPrefix(fmt.Sprintf("select_dynamic %s-%s", option.Flags[0],state["first"])), // Handle dynamic dropdown
 			OptionGroups: []api.OptionGroup{
 				{
 					Name:    option.Description,
@@ -286,7 +286,7 @@ func allSelectionsMade(state map[string]string, options []Option) bool {
 		if option.Flags[0] == "-h" {
 			continue
 		}
-		if state[option.Flags[0]] == "" {
+		if state[fmt.Sprintf("%s-%s", option.Flags[0]-state["first"])] == "" {
 			return false
 		}
 	}
