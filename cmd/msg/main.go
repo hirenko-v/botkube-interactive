@@ -247,12 +247,15 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 			OptionGroups: []api.OptionGroup{
 				{
 					Name:    option.Description,
-					Options: dropdownOptions,
+					Options: []api.OptionItem{
+						{Name: "123", Value: "123"},
+						{Name: "456", Value: "456"},
+						{Name: "789", Value: "789"},
+					},
 				},
 			},
 			InitialOption: &api.OptionItem{
-				Name: "true",
-				Value: "true",
+				Name: "789", Value: "789",
 			},
 		})
 	}
