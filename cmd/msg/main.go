@@ -236,7 +236,7 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 		for _, value := range option.Values {
 			dropdownOptions = append(dropdownOptions, api.OptionItem{
 				Name:  value,
-				Value: value,
+				Value: fmt.Sprintf("%s %s", option.Flags[0], value),
 			})
 		}
 
@@ -247,15 +247,8 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 			OptionGroups: []api.OptionGroup{
 				{
 					Name:    option.Description,
-					Options: []api.OptionItem{
-						{Name: "123", Value: "123"},
-						{Name: "456", Value: "456"},
-						{Name: "789", Value: "789"},
-					},
+					Options: dropdownOptions,
 				},
-			},
-			InitialOption: &api.OptionItem{
-				Name: "789", Value: "789",
 			},
 		})
 	}
