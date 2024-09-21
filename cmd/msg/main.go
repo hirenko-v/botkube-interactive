@@ -85,10 +85,10 @@ func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exec
 
 	switch action {
 	case "select_first":
-		for key := range e.state[sessionID] {
-			// if key != "first" { // Keep the first selection
+		if e.state[sessionID]['first'] != value
+			for key := range e.state[sessionID] {
 				delete(e.state[sessionID], key)
-			// }
+			}
 		}
 
 		// Store the selection from the first dropdown
@@ -250,7 +250,6 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 					Options: dropdownOptions,
 				},
 			},
-			InitialOption: nil,
 		})
 	}
 
