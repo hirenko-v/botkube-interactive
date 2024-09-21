@@ -250,6 +250,10 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 					Options: dropdownOptions,
 				},
 			},
+			InitialOption: &api.OptionItem{
+				Name:  option.Default,
+				Value: fmt.Sprintf("%s %s", option.Flags[0], option.Default,),
+			},
 		})
 	}
 
