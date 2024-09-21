@@ -32,7 +32,7 @@ type Option struct {
 	Flags       []string `json:"flags"`
 	Description string   `json:"description"`
 	Values      []string `json:"values,omitempty"`
-	Default     bool      `json:"default,omitempty"`
+	Default     string   `json:"default,omitempty"`
 }
 
 type ScriptOutput struct {
@@ -249,6 +249,10 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 					Name:    option.Description,
 					Options: dropdownOptions,
 				},
+			},
+			InitialOption: &api.OptionItem{
+				Name:  option.Default, // Get first selection from state
+				Value: fmt.Sprintf("%s %s" ,option.Flags[0], option.Default),
 			},
 		})
 	}
