@@ -85,7 +85,7 @@ func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exec
 
 	switch action {
 	case "select_first":
-		if e.state[sessionID]['first'] != value
+		if e.state[sessionID]["first"] != value
 				delete(e.state[sessionID], key)
 			}
 		}
