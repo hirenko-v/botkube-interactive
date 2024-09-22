@@ -221,7 +221,7 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 				Text:        "test",
 				Placeholder: "test",
 				DispatchedAction: api.DispatchInputActionOnCharacter,
-			}
+			},
 		},
 	}
 
