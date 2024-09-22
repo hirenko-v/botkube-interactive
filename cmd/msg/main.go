@@ -33,6 +33,7 @@ type Option struct {
 	Description string   `json:"description"`
 	Values      []string `json:"values,omitempty"`
 	Default     string   `json:"default,omitempty"`
+	Type        string   `json:"type"`
 }
 
 type ScriptOutput struct {
@@ -175,29 +176,6 @@ func initialMessages() executor.ExecuteOutput {
 							},
 						},
 					},
-					TextFields: api.TextFields{
-						{
-							Key:   "Kind",
-							Value: "pod",
-						},
-						{
-							Key:   "Namespace",
-							Value: "botkube",
-						},
-						{
-							Key:   "Name",
-							Value: "webapp-server-68c5c57f6f",
-						},
-						{
-							Key:   "Reason",
-							Value: "BackOff",
-						},
-					},
-					Context: api.ContextItems{
-						api.ContextItem{
-							Text: "To learn more about `kubectl` RBAC visit https://docs.botkube.io/configuration/executor/kubectl.",
-						},
-					},
 				},
 			},
 			OnlyVisibleForYou: true,
@@ -255,44 +233,57 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 			continue
 		}
 
-		var dropdownOptions []api.OptionItem
-		for _, value := range option.Values {
-			dropdownOptions = append(dropdownOptions, api.OptionItem{
-				Name:  value,
-				Value: fmt.Sprintf("%s %s", option.Flags[0], value),
+		if option.Type == "bool" || option.Type == "dropdown" {
+
+			var dropdownOptions []api.OptionItem
+			for _, value := range option.Values {
+				dropdownOptions = append(dropdownOptions, api.OptionItem{
+					Name:  value,
+					Value: fmt.Sprintf("%s %s", option.Flags[0], value),
+				})
+			}
+
+			// Construct the flag key for the state
+			flagKey := fmt.Sprintf("%s-%s", state["first"], option.Flags[0])
+
+			// Check if there's an InitialOption and update the state if it’s not already set
+			if _, exists := state[flagKey]; !exists && option.Default != "" {
+				state[flagKey] = fmt.Sprintf("%s %s", option.Flags[0], option.Default)
+			}
+
+			var initialOption *api.OptionItem
+			if option.Default != "" {
+				initialOption = &api.OptionItem{
+					Name:  option.Default,
+					Value: fmt.Sprintf("%s %s", option.Flags[0], option.Default),
+				}
+			} else {
+				initialOption = nil // Set to nil if Default is not set
+			}
+
+			// Add the dropdown with the InitialOption if available
+			sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
+				Name:    option.Description, // Adjust name based on flags
+				Command: cmdPrefix(fmt.Sprintf("select_dynamic %s", flagKey)), // Handle dynamic dropdown
+				OptionGroups: []api.OptionGroup{
+					{
+						Name:    option.Description,
+						Options: dropdownOptions,
+					},
+				},
+				InitialOption: initialOption,
 			})
 		}
-
-		// Construct the flag key for the state
-		flagKey := fmt.Sprintf("%s-%s", state["first"], option.Flags[0])
-
-		// Check if there's an InitialOption and update the state if it’s not already set
-		if _, exists := state[flagKey]; !exists && option.Default != "" {
-			state[flagKey] = fmt.Sprintf("%s %s", option.Flags[0], option.Default)
-		}
-
-		var initialOption *api.OptionItem
-		if option.Default != "" {
-			initialOption = &api.OptionItem{
-				Name:  option.Default,
-				Value: fmt.Sprintf("%s %s", option.Flags[0], option.Default),
-			}
-		} else {
-			initialOption = nil // Set to nil if Default is not set
-		}
-
-		// Add the dropdown with the InitialOption if available
-		sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
-			Name:    option.Description, // Adjust name based on flags
-			Command: cmdPrefix(fmt.Sprintf("select_dynamic %s", flagKey)), // Handle dynamic dropdown
-			OptionGroups: []api.OptionGroup{
-				{
-					Name:    option.Description,
-					Options: dropdownOptions,
+		if option.Type == "text" {
+			sections[0].Selects.Items = append(sections[0], PlaintextInputs: api.LabelInputs{
+				api.LabelInput{
+					// Command:          "@BKTesting kubectl @builder --filter-query ",
+					DispatchedAction: api.DispatchInputActionOnCharacter,
+					Text:             "Filter output",
+					Placeholder:      "Filter output by string (optional)",
 				},
-			},
-			InitialOption: initialOption,
-		})
+			})
+		}
 	}
 
 	// If all selections are made, show the run button
