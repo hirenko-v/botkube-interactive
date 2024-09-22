@@ -176,6 +176,13 @@ func initialMessages() executor.ExecuteOutput {
 							},
 						},
 					},
+					PlaintextInputs: api.LabelInput{ 
+						{
+							Text:        "test",
+							Placeholder: "test",
+							DispatchedAction: api.DispatchInputActionOnCharacter,
+						},
+					},
 				},
 			},
 			OnlyVisibleForYou: true,
@@ -215,15 +222,6 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 							Value: state["first"],
 						},
 					},
-				},
-			},
-		},
-		{
-			PlaintextInputs: api.LabelInput{ 
-				{
-					Text:        "test",
-					Placeholder: "test",
-					DispatchedAction: api.DispatchInputActionOnCharacter,
 				},
 			},
 		},
