@@ -290,7 +290,7 @@ func allSelectionsMade(state map[string]string, options []Option) bool {
 		if option.Flags[0] == "-h" {
 			continue
 		}
-		if state[fmt.Sprintf("%s-%s", option.Flags[0], state["first"])] == "" {
+		if state[fmt.Sprintf("%s-%s", state["first"], option.Flags[0])] == "" {
 			return false
 		}
 	}
