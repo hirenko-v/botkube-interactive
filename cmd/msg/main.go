@@ -175,38 +175,38 @@ func initialMessages() executor.ExecuteOutput {
 							},
 						},
 					},
-				},
-				BulletLists: api.BulletLists{
-					{
-						Title: "Messages",
-						Items: []string{
-							"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt",
-							"Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium",
-							"At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium",
-						},
-					},
-					{
-						Title: "Issues",
-						Items: []string{
-							"Issue item 1",
-							"Issue item 2",
-							"Issue item 3",
-						},
-					},
-				},
-				MultiSelect: api.MultiSelect{
-					Name: "Adjust notifications",
-					Description: api.Body{
-						Plaintext: "Select notification sources",
-					},
-					Options: []api.OptionItem{
+					BulletLists: api.BulletLists{
 						{
-							Name:  "K8s all events",
-							Value: "k8s-all-events",
+							Title: "Messages",
+							Items: []string{
+								"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt",
+								"Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium",
+								"At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium",
+							},
 						},
 						{
-							Name:  "K8s recommendations",
-							Value: "k8s-recommendations",
+							Title: "Issues",
+							Items: []string{
+								"Issue item 1",
+								"Issue item 2",
+								"Issue item 3",
+							},
+						},
+					},
+					MultiSelect: api.MultiSelect{
+						Name: "Adjust notifications",
+						Description: api.Body{
+							Plaintext: "Select notification sources",
+						},
+						Options: []api.OptionItem{
+							{
+								Name:  "K8s all events",
+								Value: "k8s-all-events",
+							},
+							{
+								Name:  "K8s recommendations",
+								Value: "k8s-recommendations",
+							},
 						},
 					},
 				},
