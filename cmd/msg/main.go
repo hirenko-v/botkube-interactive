@@ -32,7 +32,7 @@ type Option struct {
 	Flags       []string `json:"flags"`
 	Description string   `json:"description"`
 	Values      []string `json:"values,omitempty"`
-	// Default     string   `json:"default,omitempty"`
+	Default     string   `json:"default,omitempty"`
 }
 
 type ScriptOutput struct {
@@ -243,12 +243,10 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 		// Construct the flag key for the state
 		flagKey := fmt.Sprintf("%s-%s", state["first"], option.Flags[0])
 
-		// // Check if there's an InitialOption and update the state if it’s not already set
-		// if _, exists := state[flagKey]; !exists && option.Default != "" {
-		// 	state[flagKey] = fmt.Sprintf("%s %s", option.Flags[0], option.Default)
-		// } else if !exists {
-		// 	state[flagKey] = "" // Set a default empty state if no default is provided
-		// }		
+		// Check if there's an InitialOption and update the state if it’s not already set
+		if _, exists := state[flagKey]; !exists && option.Default != "" {
+			state[flagKey] = fmt.Sprintf("%s %s", option.Flags[0], option.Default)
+		}
 
 		// Add the dropdown with the InitialOption if available
 		sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
