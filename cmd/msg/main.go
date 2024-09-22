@@ -176,12 +176,12 @@ func initialMessages() executor.ExecuteOutput {
 							},
 						},
 					},
-					PlaintextInputs: api.LabelInput{ 
-						{
-							Text:        "test",
-							Placeholder: "test",
-							DispatchedAction: api.DispatchInputActionOnCharacter,
-						},
+				},
+				PlaintextInputs: api.LabelInput{ 
+					{
+						Text:        "test",
+						Placeholder: "test",
+						DispatchedAction: api.DispatchInputActionOnCharacter,
 					},
 				},
 			},
