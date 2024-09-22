@@ -240,10 +240,18 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 			})
 		}
 
-		// Use the flag as a key to track dropdown selections
+		// Construct the flag key for the state
+		flagKey := fmt.Sprintf("%s-%s", state["first"], option.Flags[0])
+
+		// Check if there's an InitialOption and update the state if it’s not already set
+		if _, exists := state[flagKey]; !exists && option.Default != "" {
+			state[flagKey] = fmt.Sprintf("%s %s", option.Flags[0], option.Default)
+		}
+
+		// Add the dropdown with the InitialOption if available
 		sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
 			Name:    option.Description, // Adjust name based on flags
-			Command: cmdPrefix(fmt.Sprintf("select_dynamic %s-%s", state["first"], option.Flags[0])), // Handle dynamic dropdown
+			Command: cmdPrefix(fmt.Sprintf("select_dynamic %s", flagKey)), // Handle dynamic dropdown
 			OptionGroups: []api.OptionGroup{
 				{
 					Name:    option.Description,
@@ -252,7 +260,7 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 			},
 			InitialOption: &api.OptionItem{
 				Name:  option.Default,
-				Value: fmt.Sprintf("%s %s" ,option.Flags[0], option.Default),
+				Value: fmt.Sprintf("%s %s", option.Flags[0], option.Default),
 			},
 		})
 	}
@@ -317,7 +325,6 @@ func buildFinalCommand(state map[string]string, options []Option) string {
 
 	return fmt.Sprintf("run %s", strings.Join(commandParts, " "))
 }
-
 
 func (MsgExecutor) Help(context.Context) (api.Message, error) {
 	msg := description
