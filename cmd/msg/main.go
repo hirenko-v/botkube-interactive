@@ -259,7 +259,7 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 
 	// If all selections are made, show the run button
 	if allSelectionsMade(state, scriptOutput.Options) {
-		code := buildFinalCommand(state)
+		code := buildFinalCommand(state, scriptOutput.Options)
 		sections = append(sections, api.Section{
 			Base: api.Base{
 				Body: api.Body{
@@ -298,15 +298,26 @@ func allSelectionsMade(state map[string]string, options []Option) bool {
 }
 
 // Helper function to build the final command based on all selections
-func buildFinalCommand(state map[string]string) string {
+func buildFinalCommand(state map[string]string, options []Option) string {
 	var commandParts []string
-	for _, value := range state {
-		if value != "" {
+
+	// Add the first selection (e.g., job name)
+	if first, ok := state["first"]; ok {
+		commandParts = append(commandParts, first)
+	}
+
+	// Add options in the same order as they appear in the script output
+	for _, option := range options {
+		// Construct the key as used in the state map
+		flagKey := fmt.Sprintf("%s-%s", state["first"], option.Flags[0])
+		if value, ok := state[flagKey]; ok && value != "" {
 			commandParts = append(commandParts, value)
 		}
 	}
+
 	return fmt.Sprintf("run %s", strings.Join(commandParts, " "))
 }
+
 
 func (MsgExecutor) Help(context.Context) (api.Message, error) {
 	msg := description
