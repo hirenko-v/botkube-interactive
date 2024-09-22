@@ -175,38 +175,27 @@ func initialMessages() executor.ExecuteOutput {
 							},
 						},
 					},
-					BulletLists: api.BulletLists{
+					TextFields: api.TextFields{
 						{
-							Title: "Messages",
-							Items: []string{
-								"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt",
-								"Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium",
-								"At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium",
-							},
+							Key:   "Kind",
+							Value: "pod",
 						},
 						{
-							Title: "Issues",
-							Items: []string{
-								"Issue item 1",
-								"Issue item 2",
-								"Issue item 3",
-							},
+							Key:   "Namespace",
+							Value: "botkube",
+						},
+						{
+							Key:   "Name",
+							Value: "webapp-server-68c5c57f6f",
+						},
+						{
+							Key:   "Reason",
+							Value: "BackOff",
 						},
 					},
-					MultiSelect: api.MultiSelect{
-						Name: "Adjust notifications",
-						Description: api.Body{
-							Plaintext: "Select notification sources",
-						},
-						Options: []api.OptionItem{
-							{
-								Name:  "K8s all events",
-								Value: "k8s-all-events",
-							},
-							{
-								Name:  "K8s recommendations",
-								Value: "k8s-recommendations",
-							},
+					Context: api.ContextItems{
+						api.ContextItem{
+							Text: "To learn more about `kubectl` RBAC visit https://docs.botkube.io/configuration/executor/kubectl.",
 						},
 					},
 				},
