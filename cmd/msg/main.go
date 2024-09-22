@@ -277,16 +277,11 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 			})
 		}
 		if option.Type == "text" {
-			sections[0].Selects.Items = append(sections[0], {
-				PlaintextInputs: api.LabelInputs{
-					api.LabelInput{
-						// Command:          "@BKTesting kubectl @builder --filter-query ",
-						DispatchedAction: api.DispatchInputActionOnCharacter,
-						Text:             "Filter output",
-						Placeholder:      "Filter output by string (optional)",
-					},
-				})
-			}
+			sections[0].PlaintextInputs = append(sections[0].PlaintextInputs, api.LabelInput{
+				Text:        "Filter output",
+				Placeholder: "Filter output by string (optional)",
+				DispatchedAction: api.DispatchInputActionOnCharacter,
+			})			
 		}
 	}
 
