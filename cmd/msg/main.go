@@ -246,7 +246,9 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 		// Check if there's an InitialOption and update the state if it’s not already set
 		if _, exists := state[flagKey]; !exists && option.Default != "" {
 			state[flagKey] = fmt.Sprintf("%s %s", option.Flags[0], option.Default)
-		}
+		} else if !exists {
+			state[flagKey] = "" // Set a default empty state if no default is provided
+		}		
 
 		// Add the dropdown with the InitialOption if available
 		sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
