@@ -236,7 +236,9 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 		if option.Type == "bool" || option.Type == "dropdown" {
 
 			var dropdownOptions []api.OptionItem
-			for _, value := range option.Values {
+			boolValues := []string{"true", "false"}
+			values := option.Values; if option.Type == "bool" { values = boolValues }
+			for _, value := range values {
 				dropdownOptions = append(dropdownOptions, api.OptionItem{
 					Name:  value,
 					Value: fmt.Sprintf("%s %s", option.Flags[0], value),
