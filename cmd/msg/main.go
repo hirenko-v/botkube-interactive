@@ -248,6 +248,16 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 			state[flagKey] = fmt.Sprintf("%s %s", option.Flags[0], option.Default)
 		}
 
+		var initialOption *api.OptionItem
+		if option.Default != "" {
+			initialOption = &api.OptionItem{
+				Name:  option.Default,
+				Value: fmt.Sprintf("%s %s", option.Flags[0], option.Default),
+			}
+		} else {
+			initialOption = nil // Set to nil if Default is not set
+		}
+
 		// Add the dropdown with the InitialOption if available
 		sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
 			Name:    option.Description, // Adjust name based on flags
@@ -258,10 +268,7 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 					Options: dropdownOptions,
 				},
 			},
-			// InitialOption: &api.OptionItem{
-			// 	Name:  option.Default,
-			// 	Value: fmt.Sprintf("%s %s", option.Flags[0], option.Default),
-			// },
+			InitialOption: initialOption,
 		})
 	}
 
