@@ -217,6 +217,11 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 					},
 				},
 			},
+			PlaintextInputs: api.LabelInput{
+				Text:        "test",
+				Placeholder: "test",
+				DispatchedAction: api.DispatchInputActionOnCharacter,
+			}
 		},
 	}
 
@@ -278,8 +283,8 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 		}
 		if option.Type == "text" {
 			sections[0].PlaintextInputs = append(sections[0].PlaintextInputs, api.LabelInput{
-				Text:        "Filter output",
-				Placeholder: "Filter output by string (optional)",
+				Text:        option.Description,
+				Placeholder: "Please write parameter value",
 				DispatchedAction: api.DispatchInputActionOnCharacter,
 			})			
 		}
