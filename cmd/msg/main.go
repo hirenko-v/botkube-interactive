@@ -32,7 +32,7 @@ type Option struct {
 	Flags       []string `json:"flags"`
 	Description string   `json:"description"`
 	Values      []string `json:"values,omitempty"`
-	Default     string   `json:"default,omitempty"`
+	// Default     string   `json:"default,omitempty"`
 }
 
 type ScriptOutput struct {
