@@ -224,7 +224,7 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 				Placeholder: "test",
 				DispatchedAction: api.DispatchInputActionOnCharacter,
 			},
-		}
+		},
 	}
 
 	// Run the script to get dynamic options based on the first selection
