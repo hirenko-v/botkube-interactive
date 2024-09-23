@@ -250,6 +250,7 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 				},
 			},
 		},
+		{},
 	}
 
 	// Run the script to get dynamic options based on the first selection
