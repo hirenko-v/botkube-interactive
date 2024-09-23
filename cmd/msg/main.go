@@ -225,7 +225,6 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 				},
 			},
 		},
-		{},
 	}
 
 	// Run the script to get dynamic options based on the first selection
@@ -286,6 +285,9 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 		}
 
 		if option.Type == "text" {
+			if len(sections) < 2 {
+				sections = append(sections, api.Section{})
+			}
 			sections[1].PlaintextInputs = append(sections[1].PlaintextInputs, api.LabelInput{
 				Command: cmdPrefix(fmt.Sprintf("select_dynamic %s %s ", flagKey, option.Flags[0])),
 				Text:        option.Description,
