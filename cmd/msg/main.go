@@ -102,13 +102,13 @@ func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exec
 		return showBothSelects(e.state[sessionID]), nil
 
 
-	case "select_plain":
-		// Store dynamic dropdown selections (flag is passed in the command)
-		flag := "123"
-		e.state[sessionID][flag] = value
-		return showBothSelects(e.state[sessionID]), nil
+	// case "select_plain":
+	// 	// Store dynamic dropdown selections (flag is passed in the command)
+	// 	flag := "123"
+	// 	e.state[sessionID][flag] = value
+	// 	return showBothSelects(e.state[sessionID]), nil
 
-	}
+	// }
 
 	if strings.TrimSpace(in.Command) == pluginName {
 		return initialMessages(), nil
