@@ -66,7 +66,6 @@ func (MsgExecutor) Metadata(context.Context) (api.MetadataOutput, error) {
 }
 
 // Execute returns a given command as a response.
-// Execute returns a given command as a response.
 func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (executor.ExecuteOutput, error) {
 	if !in.Context.IsInteractivitySupported {
 		return executor.ExecuteOutput{
@@ -128,11 +127,7 @@ func parseCommand(cmd string) (action, value string) {
 	if len(parts) > 1 {
 		action = parts[1]
 		value = strings.Join(parts[2:], " ")
-	} 
-	// else {
-	// 	action = "select_plain"
-	// 	value = cmd
-	// }
+	}
 	return
 }
 
@@ -292,7 +287,7 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 		}
 		if option.Type == "text" {
 			plaintextInputs = append(plaintextInputs, api.LabelInput{
-				Command: cmdPrefix(fmt.Sprintf("select_plain %s", flagKey)),
+				Command: cmdPrefix(fmt.Sprintf("select_plain %s ", flagKey)),
 				Text:        option.Description,
 				Placeholder: "Please write parameter value",
 				DispatchedAction: api.DispatchInputActionOnEnter,
