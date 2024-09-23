@@ -178,10 +178,15 @@ func initialMessages() executor.ExecuteOutput {
 					},
 				},
 			},
-			PlaintextInputs: []api.LabelInput{
-				{
+			PlaintextInputs: api.LabelInputs{
+				api.LabelInput{
 					Text:        "test",
 					Placeholder: "test",
+					DispatchedAction: api.DispatchInputActionOnCharacter,
+				},
+				api.LabelInput{
+					Text:        "test2",
+					Placeholder: "test2",
 					DispatchedAction: api.DispatchInputActionOnCharacter,
 				},
 			},
@@ -227,12 +232,14 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 		},
 	}
 
+	plaintextInputs := []api.LabelInputs{
+
+	}
 	// Run the script to get dynamic options based on the first selection
 	scriptOutput, err := runScript(state["first"])
 	if err != nil {
 		log.Fatalf("Error running script: %v", err)
 	}
-	section := 0
 	// Create multiple dropdowns based on the options in the script output
 	for _, option := range scriptOutput.Options {
 		// Skip the help options (-h, --help)
@@ -284,8 +291,7 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 			})
 		}
 		if option.Type == "text" {
-			section += 1
-			sections[section].PlaintextInputs = append(sections[section].PlaintextInputs, api.LabelInput{
+			plaintextInputs[0].PlaintextInput = append(plaintextInputs[0].PlaintextInputs, api.LabelInput{
 				Text:        option.Description,
 				Placeholder: "Please write parameter value",
 				DispatchedAction: api.DispatchInputActionOnCharacter,
@@ -314,6 +320,7 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 				Plaintext: "Please select th Job parameters",
 			},
 			Sections:          sections,
+			PlaintextInputs:   plaintextInputs
 			OnlyVisibleForYou: true,
 			ReplaceOriginal:   true,
 		},
