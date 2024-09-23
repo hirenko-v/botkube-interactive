@@ -184,31 +184,6 @@ func initialMessages() executor.ExecuteOutput {
 						},
 					},
 				},
-				{
-					PlaintextInputs:[]api.LabelInput{
-						{
-							DispatchedAction: api.DispatchInputActionOnEnter,
-							Placeholder:      "String pattern to filter by",
-							Text:             "Filter output",
-						},
-					},
-				},
-				{
-					Selects: api.Selects{
-						ID: "ttt",
-						Items: []api.Select{
-							{
-								Name:    "ff",
-								OptionGroups: []api.OptionGroup{
-									{
-										Name:    "Job Name",
-										Options: fileList,
-									},
-								},
-							},
-						},
-					},
-				},
 			},
 			OnlyVisibleForYou: true,
 			ReplaceOriginal:   false,
