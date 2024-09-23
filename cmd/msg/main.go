@@ -193,6 +193,22 @@ func initialMessages() executor.ExecuteOutput {
 						},
 					},
 				},
+				{
+					Selects: api.Selects{
+						ID: "ttt",
+						Items: []api.Select{
+							{
+								Name:    "ff",
+								OptionGroups: []api.OptionGroup{
+									{
+										Name:    "Job Name",
+										Options: fileList,
+									},
+								},
+							},
+						},
+					},
+				},
 			},
 			OnlyVisibleForYou: true,
 			ReplaceOriginal:   false,
