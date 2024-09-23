@@ -290,7 +290,7 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 				Command: cmdPrefix(fmt.Sprintf("select_dynamic %s %s ", flagKey, option.Flags[0])),
 				Text:        option.Description,
 				Placeholder: "Please write parameter value",
-				DispatchedAction: api.DispatchInputActionOnEnter,
+				DispatchedAction: api.DispatchInputActionOnCharacter,
 			})
 		}
 	}
