@@ -280,7 +280,7 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 		}
 		if option.Type == "text" {
 			plaintextInputs = append(plaintextInputs, api.LabelInput{
-				// Command: cmdPrefix(fmt.Sprintf("select_dynamic %s", flagKey)),
+				Command: cmdPrefix(fmt.Sprintf("select_dynamic %s", flagKey)),
 				Text:        option.Description,
 				Placeholder: "Please write parameter value",
 				DispatchedAction: api.DispatchInputActionOnEnter,
@@ -318,14 +318,14 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 
 // Helper function to check if all selections are made
 func allSelectionsMade(state map[string]string, options []Option) bool {
-	for _, option := range options {
-		if option.Flags[0] == "-h" {
-			continue
-		}
-		if state[fmt.Sprintf("%s-%s", state["first"], option.Flags[0])] == "" {
-			return false
-		}
-	}
+	// for _, option := range options {
+	// 	if option.Flags[0] == "-h" {
+	// 		continue
+	// 	}
+	// 	if state[fmt.Sprintf("%s-%s", state["first"], option.Flags[0])] == "" {
+	// 		return false
+	// 	}
+	// }
 	return true
 }
 
