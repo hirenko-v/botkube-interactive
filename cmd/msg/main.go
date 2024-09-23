@@ -178,18 +178,6 @@ func initialMessages() executor.ExecuteOutput {
 					},
 				},
 			},
-			PlaintextInputs: api.LabelInputs{
-				api.LabelInput{
-					Text:        "test",
-					Placeholder: "test",
-					DispatchedAction: api.DispatchInputActionOnCharacter,
-				},
-				api.LabelInput{
-					Text:        "test2",
-					Placeholder: "test2",
-					DispatchedAction: api.DispatchInputActionOnCharacter,
-				},
-			},
 			OnlyVisibleForYou: true,
 			ReplaceOriginal:   false,
 		},
@@ -246,6 +234,9 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 			continue
 		}
 
+		// Construct the flag key for the state
+		flagKey := fmt.Sprintf("%s-%s", state["first"], option.Flags[0])
+
 		if option.Type == "bool" || option.Type == "dropdown" {
 
 			var dropdownOptions []api.OptionItem
@@ -258,8 +249,6 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 				})
 			}
 
-			// Construct the flag key for the state
-			flagKey := fmt.Sprintf("%s-%s", state["first"], option.Flags[0])
 
 			// Check if there's an InitialOption and update the state if it’s not already set
 			if _, exists := state[flagKey]; !exists && option.Default != "" {
@@ -291,6 +280,7 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 		}
 		if option.Type == "text" {
 			plaintextInputs = append(plaintextInputs, api.LabelInput{
+				Command: cmdPrefix(fmt.Sprintf("select_dynamic %s", flagKey)), // Handle dynamic dropdown
 				Text:        option.Description,
 				Placeholder: "Please write parameter value",
 				DispatchedAction: api.DispatchInputActionOnCharacter,
