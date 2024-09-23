@@ -232,7 +232,7 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 		},
 	}
 
-	// plaintextInputs := []api.LabelInputs{}
+	plaintextInputs := []api.LabelInputs{}
 
 	// Run the script to get dynamic options based on the first selection
 	scriptOutput, err := runScript(state["first"])
@@ -289,13 +289,13 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 				InitialOption: initialOption,
 			})
 		}
-		// if option.Type == "text" {
-		// 	plaintextInputs[0] = append(plaintextInputs[0], api.LabelInput{
-		// 		Text:        option.Description,
-		// 		Placeholder: "Please write parameter value",
-		// 		DispatchedAction: api.DispatchInputActionOnCharacter,
-		// 	})		
-		// }
+		if option.Type == "text" {
+			plaintextInputs[0] = append(plaintextInputs[0], api.LabelInput{
+				Text:        option.Description,
+				Placeholder: "Please write parameter value",
+				DispatchedAction: api.DispatchInputActionOnCharacter,
+			})		
+		}
 	}
 
 	// If all selections are made, show the run button
@@ -319,7 +319,7 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 				Plaintext: "Please select th Job parameters",
 			},
 			Sections:          sections,
-			// PlaintextInputs:   plaintextInputs,
+			PlaintextInputs:   plaintextInputs,
 			OnlyVisibleForYou: true,
 			ReplaceOriginal:   true,
 		},
