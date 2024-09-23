@@ -106,7 +106,7 @@ func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exec
 	case "select_plain":
 		// Store dynamic dropdown selections (flag is passed in the command)
 		flag := strings.Fields(value)[0]
-		e.state[sessionID][flag] = value
+		e.state[sessionID][flag] = "asd"
 		return showBothSelects(e.state[sessionID]), nil
 
 	}
