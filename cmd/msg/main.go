@@ -105,8 +105,8 @@ func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exec
 
 	case "select_plain":
 		// Store dynamic dropdown selections (flag is passed in the command)
-		flag := strings.Fields(value)[0]
-		e.state[sessionID][flag] = "asd"
+		flag := "123"
+		e.state[sessionID][flag] = value
 		return showBothSelects(e.state[sessionID]), nil
 
 	}
@@ -128,6 +128,9 @@ func parseCommand(cmd string) (action, value string) {
 	if len(parts) > 1 {
 		action = parts[1]
 		value = strings.Join(parts[2:], " ")
+	} else {
+		action = "select_plain"
+		value = cmd
 	}
 	return
 }
