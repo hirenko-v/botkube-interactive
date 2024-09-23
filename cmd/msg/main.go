@@ -275,7 +275,7 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 			// Add the dropdown with the InitialOption if available
 			sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
 				Name:    option.Description, // Adjust name based on flags
-				Command: cmdPrefix(fmt.Sprintf("select_plain %s", flagKey)), // Handle dynamic dropdown
+				Command: cmdPrefix(fmt.Sprintf("select_dynamic %s", flagKey)), // Handle dynamic dropdown
 				OptionGroups: []api.OptionGroup{
 					{
 						Name:    option.Description,
@@ -287,7 +287,7 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 		}
 		if option.Type == "text" {
 			plaintextInputs = append(plaintextInputs, api.LabelInput{
-				Command: cmdPrefix(fmt.Sprintf("select_plain %s", flagKey)),
+				Command: cmdPrefix(fmt.Sprintf("select_plain %s %s", flagKey, flagKey)),
 				Text:        option.Description,
 				Placeholder: "Please write parameter value",
 				DispatchedAction: api.DispatchInputActionOnEnter,
