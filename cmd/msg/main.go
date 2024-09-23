@@ -108,7 +108,7 @@ func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exec
 	// 	e.state[sessionID][flag] = value
 	// 	return showBothSelects(e.state[sessionID]), nil
 
-	// }
+	}
 
 	if strings.TrimSpace(in.Command) == pluginName {
 		return initialMessages(), nil
