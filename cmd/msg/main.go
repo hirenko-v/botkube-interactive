@@ -245,17 +245,18 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 		flagKey := fmt.Sprintf("%s-%s", state["first"], option.Flags[0])
 
 		if option.Type == "bool" || option.Type == "dropdown" {
-
 			var dropdownOptions []api.OptionItem
 			boolValues := []string{"true", "false"}
-			values := option.Values; if option.Type == "bool" { values = boolValues }
+			values := option.Values
+			if option.Type == "bool" {
+				values = boolValues
+			}
 			for _, value := range values {
 				dropdownOptions = append(dropdownOptions, api.OptionItem{
 					Name:  value,
 					Value: fmt.Sprintf("%s %s", option.Flags[0], value),
 				})
 			}
-
 
 			// Check if there's an InitialOption and update the state if it’s not already set
 			if _, exists := state[flagKey]; !exists && option.Default != "" {
@@ -285,20 +286,22 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 				InitialOption: initialOption,
 			})
 		}
+
 		if option.Type == "text" {
 			plaintextInputs = append(plaintextInputs, api.LabelInput{
-				Command: cmdPrefix(fmt.Sprintf("select_dynamic %s %s ", flagKey, option.Flags[0])),
-				Text:        option.Description,
-				Placeholder: "Please write parameter value",
+				Command:          cmdPrefix(fmt.Sprintf("select_dynamic %s %s ", flagKey, option.Flags[0])),
+				Text:             option.Description,
+				Placeholder:      "Please write parameter value",
 				DispatchedAction: api.DispatchInputActionOnCharacter,
 			})
 		}
 	}
 
-	// If all selections are made, show the run button
+	// Create the final section with the command and the run button if all selections are made
+	var finalSections []api.Section
 	if allSelectionsMade(state, scriptOutput.Options) {
 		code := buildFinalCommand(state, scriptOutput.Options)
-		sections = append(sections, api.Section{
+		finalSections = append(finalSections, api.Section{
 			Base: api.Base{
 				Body: api.Body{
 					CodeBlock: code,
@@ -313,15 +316,16 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: "Please select th Job parameters",
+				Plaintext: "Please select the Job parameters",
 			},
-			Sections:          sections,
+			Sections:          append(sections, finalSections...),
 			PlaintextInputs:   plaintextInputs,
 			OnlyVisibleForYou: true,
 			ReplaceOriginal:   true,
 		},
 	}
 }
+
 
 // Helper function to check if all selections are made
 func allSelectionsMade(state map[string]string, options []Option) bool {
