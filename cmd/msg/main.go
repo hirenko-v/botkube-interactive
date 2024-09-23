@@ -86,10 +86,10 @@ func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exec
 	switch action {
 	case "select_first":
 		// if e.state[sessionID]["first"] != value {
-			for key := range e.state[sessionID] {
-				delete(e.state[sessionID], key)
-			// }
-		}
+		// 	for key := range e.state[sessionID] {
+		// 		delete(e.state[sessionID], key)
+		// 	// }
+		// }
 
 		// Store the selection from the first dropdown
 		e.state[sessionID]["first"] = value
