@@ -262,14 +262,10 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 	// Create multiple dropdowns based on the options in the script output
 	for _, option := range scriptOutput.Options {
 		// Skip the help options (-h, --help)
-		if option.Flags[0] == "-h" {
-			continue
-		}
-
-		// Construct the flag key for the state
-		flagKey := fmt.Sprintf("%s-%s", state["first"], option.Flags[0])
-
 		if option.Type == "bool" || option.Type == "dropdown" {
+
+			// Construct the flag key for the state
+			flagKey := fmt.Sprintf("%s-%s", state["first"], option.Flags[0])
 
 			var dropdownOptions []api.OptionItem
 			boolValues := []string{"true", "false"}
@@ -310,7 +306,10 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 				InitialOption: initialOption,
 			})
 		}
+	}
+	for _, option := range scriptOutput.Options {
 		if option.Type == "text" {
+			flagKey := fmt.Sprintf("%s-%s", state["first"], option.Flags[0])
 			sections[0].PlaintextInputs = append(sections[0].PlaintextInputs, api.LabelInput{
 				Command: cmdPrefix(fmt.Sprintf("select_dynamic %s %s ", flagKey, option.Flags[0])),
 				Text:        option.Description,
