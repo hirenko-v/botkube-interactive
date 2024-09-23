@@ -232,7 +232,7 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 		},
 	}
 
-	plaintextInputs := []api.LabelInputs{}
+	plaintextInputs := api.LabelInputs{}
 
 	// Run the script to get dynamic options based on the first selection
 	scriptOutput, err := runScript(state["first"])
@@ -290,11 +290,11 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 			})
 		}
 		if option.Type == "text" {
-			plaintextInputs[0] = append(plaintextInputs[0], api.LabelInput{
+			plaintextInputs = append(plaintextInputs, api.LabelInput{
 				Text:        option.Description,
 				Placeholder: "Please write parameter value",
 				DispatchedAction: api.DispatchInputActionOnCharacter,
-			})		
+			})
 		}
 	}
 
