@@ -85,10 +85,10 @@ func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exec
 
 	switch action {
 	case "select_first":
-		if e.state[sessionID]["first"] != value {
+		// if e.state[sessionID]["first"] != value {
 			for key := range e.state[sessionID] {
 				delete(e.state[sessionID], key)
-			}
+			// }
 		}
 
 		// Store the selection from the first dropdown
@@ -100,13 +100,6 @@ func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exec
 		flag := strings.Fields(value)[0]
 		e.state[sessionID][flag] = strings.TrimPrefix(value, flag+" ")
 		return showBothSelects(e.state[sessionID]), nil
-
-
-	// case "select_plain":
-	// 	// Store dynamic dropdown selections (flag is passed in the command)
-	// 	flag := "123"
-	// 	e.state[sessionID][flag] = value
-	// 	return showBothSelects(e.state[sessionID]), nil
 
 	}
 
