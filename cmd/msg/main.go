@@ -128,10 +128,11 @@ func parseCommand(cmd string) (action, value string) {
 	if len(parts) > 1 {
 		action = parts[1]
 		value = strings.Join(parts[2:], " ")
-	} else {
-		action = "select_plain"
-		value = cmd
-	}
+	} 
+	// else {
+	// 	action = "select_plain"
+	// 	value = cmd
+	// }
 	return
 }
 
