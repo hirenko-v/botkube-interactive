@@ -277,17 +277,17 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 			})
 		}
 
-		if option.Type == "text" {
-			if len(sections) < 2 {
-				sections = append(sections, api.Section{})
-			}
-			sections[1].PlaintextInputs = append(sections[1].PlaintextInputs, api.LabelInput{
-				Command: cmdPrefix(fmt.Sprintf("select_dynamic %s %s ", flagKey, option.Flags[0])),
-				Text:        option.Description,
-				Placeholder: "Please write parameter value",
-				DispatchedAction: api.DispatchInputActionOnCharacter,
-			})
-		}
+		// if option.Type == "text" {
+		// 	if len(sections) < 2 {
+		// 		sections = append(sections, api.Section{})
+		// 	}
+		// 	sections[1].PlaintextInputs = append(sections[1].PlaintextInputs, api.LabelInput{
+		// 		Command: cmdPrefix(fmt.Sprintf("select_dynamic %s %s ", flagKey, option.Flags[0])),
+		// 		Text:        option.Description,
+		// 		Placeholder: "Please write parameter value",
+		// 		DispatchedAction: api.DispatchInputActionOnCharacter,
+		// 	})
+		// }
 	}
 
 	// If all selections are made, show the run button
