@@ -157,7 +157,7 @@ func initialMessages() executor.ExecuteOutput {
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: "Select a file from the dropdown.",
+				Plaintext: "Please select the Job name.",
 			},
 			Sections: []api.Section{
 				{
@@ -176,13 +176,6 @@ func initialMessages() executor.ExecuteOutput {
 							},
 						},
 					},
-				},
-			},
-			PlaintextInputs: []api.LabelInput{
-				{
-					Text:        "test",
-					Placeholder: "test",
-					DispatchedAction: api.DispatchInputActionOnCharacter,
 				},
 			},
 			OnlyVisibleForYou: true,
@@ -232,7 +225,7 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 	if err != nil {
 		log.Fatalf("Error running script: %v", err)
 	}
-
+	section := 0
 	// Create multiple dropdowns based on the options in the script output
 	for _, option := range scriptOutput.Options {
 		// Skip the help options (-h, --help)
@@ -284,11 +277,12 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 			})
 		}
 		if option.Type == "text" {
-			sections[0].PlaintextInputs = append(sections[0].PlaintextInputs, api.LabelInput{
+			section += 1
+			sections[section].PlaintextInputs = append(sections[section].PlaintextInputs, api.LabelInput{
 				Text:        option.Description,
 				Placeholder: "Please write parameter value",
 				DispatchedAction: api.DispatchInputActionOnCharacter,
-			})			
+			})		
 		}
 	}
 
@@ -310,7 +304,7 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: "You've selected from the dropdowns. Now run the command if ready.",
+				Plaintext: "Please select th Job parameters",
 			},
 			Sections:          sections,
 			OnlyVisibleForYou: true,
