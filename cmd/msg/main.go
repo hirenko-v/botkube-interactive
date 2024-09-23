@@ -320,7 +320,7 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 				Plaintext: "Please select th Job parameters",
 			},
 			Sections:          sections,
-			PlaintextInputs:   plaintextInputs
+			PlaintextInputs:   plaintextInputs,
 			OnlyVisibleForYou: true,
 			ReplaceOriginal:   true,
 		},
