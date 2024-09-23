@@ -103,6 +103,13 @@ func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exec
 		return showBothSelects(e.state[sessionID]), nil
 	}
 
+	case "select_plain":
+		// Store dynamic dropdown selections (flag is passed in the command)
+		flag := strings.Fields(value)[0]
+		e.state[sessionID][flag] = value
+		return showBothSelects(e.state[sessionID]), nil
+	}
+
 	if strings.TrimSpace(in.Command) == pluginName {
 		return initialMessages(), nil
 	}
@@ -280,7 +287,7 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 		}
 		if option.Type == "text" {
 			plaintextInputs = append(plaintextInputs, api.LabelInput{
-				Command: cmdPrefix(fmt.Sprintf("select_dynamic %s", flagKey)),
+				Command: cmdPrefix(fmt.Sprintf("select_plain %s", flagKey)),
 				Text:        option.Description,
 				Placeholder: "Please write parameter value",
 				DispatchedAction: api.DispatchInputActionOnEnter,
