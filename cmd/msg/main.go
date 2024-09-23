@@ -85,11 +85,11 @@ func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exec
 
 	switch action {
 	case "select_first":
-		// if e.state[sessionID]["first"] != value {
-		// 	for key := range e.state[sessionID] {
-		// 		delete(e.state[sessionID], key)
-		// 	// }
-		// }
+		if e.state[sessionID]["first"] != value {
+			for key := range e.state[sessionID] {
+				delete(e.state[sessionID], key)
+			}
+		}
 
 		// Store the selection from the first dropdown
 		e.state[sessionID]["first"] = value
@@ -100,6 +100,13 @@ func (e *MsgExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exec
 		flag := strings.Fields(value)[0]
 		e.state[sessionID][flag] = strings.TrimPrefix(value, flag+" ")
 		return showBothSelects(e.state[sessionID]), nil
+
+
+	// case "select_plain":
+	// 	// Store dynamic dropdown selections (flag is passed in the command)
+	// 	flag := "123"
+	// 	e.state[sessionID][flag] = value
+	// 	return showBothSelects(e.state[sessionID]), nil
 
 	}
 
@@ -277,17 +284,17 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 			})
 		}
 
-		// if option.Type == "text" {
-		// 	if len(sections) < 2 {
-		// 		sections = append(sections, api.Section{})
-		// 	}
-		// 	sections[1].PlaintextInputs = append(sections[1].PlaintextInputs, api.LabelInput{
-		// 		Command: cmdPrefix(fmt.Sprintf("select_dynamic %s %s ", flagKey, option.Flags[0])),
-		// 		Text:        option.Description,
-		// 		Placeholder: "Please write parameter value",
-		// 		DispatchedAction: api.DispatchInputActionOnCharacter,
-		// 	})
-		// }
+		if option.Type == "text" {
+			if len(sections) < 2 {
+				sections = append(sections, api.Section{})
+			}
+			sections[1].PlaintextInputs = append(sections[1].PlaintextInputs, api.LabelInput{
+				Command: cmdPrefix(fmt.Sprintf("select_dynamic %s %s ", flagKey, option.Flags[0])),
+				Text:        option.Description,
+				Placeholder: "Please write parameter value",
+				DispatchedAction: api.DispatchInputActionOnCharacter,
+			})
+		}
 	}
 
 	// If all selections are made, show the run button
