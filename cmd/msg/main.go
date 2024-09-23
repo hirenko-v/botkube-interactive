@@ -280,10 +280,10 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 		}
 		if option.Type == "text" {
 			plaintextInputs = append(plaintextInputs, api.LabelInput{
-				Command: cmdPrefix(fmt.Sprintf("select_dynamic %s", flagKey)), // Handle dynamic dropdown
+				// Command: cmdPrefix(fmt.Sprintf("select_dynamic %s", flagKey)),
 				Text:        option.Description,
 				Placeholder: "Please write parameter value",
-				DispatchedAction: api.DispatchInputActionOnCharacter,
+				DispatchedAction: api.DispatchInputActionOnEnter,
 			})
 		}
 	}
