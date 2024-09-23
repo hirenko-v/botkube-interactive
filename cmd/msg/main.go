@@ -184,6 +184,15 @@ func initialMessages() executor.ExecuteOutput {
 						},
 					},
 				},
+				{
+					PlaintextInputs:[]api.LabelInput{
+						{
+							DispatchedAction: api.DispatchInputActionOnEnter,
+							Placeholder:      "String pattern to filter by",
+							Text:             "Filter output",
+						},
+					},
+				},
 			},
 			OnlyVisibleForYou: true,
 			ReplaceOriginal:   false,
