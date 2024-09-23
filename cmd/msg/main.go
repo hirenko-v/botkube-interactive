@@ -178,6 +178,13 @@ func initialMessages() executor.ExecuteOutput {
 					},
 				},
 			},
+			PlaintextInputs: []api.LabelInput{
+				{
+					Text:        "test",
+					Placeholder: "test",
+					DispatchedAction: api.DispatchInputActionOnCharacter,
+				},
+			},
 			OnlyVisibleForYou: true,
 			ReplaceOriginal:   false,
 		},
