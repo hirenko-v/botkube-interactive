@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	description = "Msg sends an example interactive messages."
-	pluginName  = "msg"
+	description = "Run Job."
+	pluginName  = "job"
 )
 
 // version is set via ldflags by GoReleaser.
