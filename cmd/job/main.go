@@ -151,6 +151,27 @@ func getFileOptions() ([]api.OptionItem, error) {
 	return fileList, nil
 }
 
+// Helper function to create the selects for the job name
+func createJobNameSelect(fileList []api.OptionItem, initialOption *api.OptionItem, cmdPrefix string) api.Selects {
+	return api.Selects{
+		ID: "select-id-1",
+		Items: []api.Select{
+			{
+				Name:    "Job Name",
+				Command: cmdPrefix,
+				OptionGroups: []api.OptionGroup{
+					{
+						Name:    "Job Name",
+						Options: fileList, // Use the retrieved file list
+					},
+				},
+				InitialOption: initialOption, // Set initial option if available
+			},
+		},
+	}
+}
+
+
 func initialMessages() executor.ExecuteOutput {
 	fileList, err := getFileOptions()
 	if err != nil {
@@ -161,6 +182,8 @@ func initialMessages() executor.ExecuteOutput {
 		return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
 	}
 
+	selects := createJobNameSelect(fileList, nil, cmdPrefix("select_first"))
+
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
@@ -168,21 +191,7 @@ func initialMessages() executor.ExecuteOutput {
 			},
 			Sections: []api.Section{
 				{
-					Selects: api.Selects{
-						ID: "select-id-1",
-						Items: []api.Select{
-							{
-								Name:    "Job Name",
-								Command: cmdPrefix("select_first"),
-								OptionGroups: []api.OptionGroup{
-									{
-										Name:    "Job Name",
-										Options: fileList, // Use the retrieved file list
-									},
-								},
-							},
-						},
-					},
+					Selects: selects,
 				},
 			},
 			OnlyVisibleForYou: true,
@@ -203,27 +212,15 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 		return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
 	}
 
+	initialOption := &api.OptionItem{
+		Name:  state["first"],
+		Value: state["first"],
+	}
+	selects := createJobNameSelect(fileList, initialOption, cmdPrefix("select_first"))
+
 	sections := []api.Section{
 		{
-			Selects: api.Selects{
-				ID: "select-id",
-				Items: []api.Select{
-					{
-						Name:   "Job Name",
-						Command: cmdPrefix("select_first"),
-						OptionGroups: []api.OptionGroup{
-							{
-								Name:    "Job Name",
-								Options: fileList,
-							},
-						},
-						InitialOption: &api.OptionItem{
-							Name:  state["first"], // Get first selection from state
-							Value: state["first"],
-						},
-					},
-				},
-			},
+			Selects: selects
 		},
 	}
 
@@ -315,7 +312,7 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: "Please select th Job parameters",
+				Plaintext: fmt.Sprintf("Please select the Job parameters for %s", state["first"] ),
 			},
 			Sections:          sections,
 			OnlyVisibleForYou: true,
