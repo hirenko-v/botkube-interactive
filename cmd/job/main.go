@@ -3,15 +3,18 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
-	"strings"
 	"log"
+	"os"
 	"os/exec"
+	"strings"
 	"encoding/json"
 
 	"github.com/hashicorp/go-plugin"
 	"github.com/kubeshop/botkube/pkg/api"
 	"github.com/kubeshop/botkube/pkg/api/executor"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -118,6 +121,8 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 	return executor.ExecuteOutput{
 		Message: api.NewCodeBlockMessage(msg, true),
 	}, nil
+
+
 }
 
 
