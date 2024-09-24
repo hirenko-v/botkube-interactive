@@ -3,9 +3,9 @@ before:
     - go mod download
 
 builds:
-  - id: msg
-    main: cmd/msg/main.go
-    binary: executor_msg_{{ .Os }}_{{ .Arch }}
+  - id: job
+    main: cmd/job/main.go
+    binary: executor_job_{{ .Os }}_{{ .Arch }}
 
     no_unique_dist_dir: true
     env: &env
