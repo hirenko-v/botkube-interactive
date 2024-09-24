@@ -220,7 +220,7 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 
 	sections := []api.Section{
 		{
-			Selects: selects
+			Selects: selects,
 		},
 	}
 
