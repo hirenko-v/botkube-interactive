@@ -229,6 +229,9 @@ func initialMessages(ctx context.Context, clientset *kubernetes.Clientset, envs 
 	runCmd := "kubectl get ns"
 	out, err := plugin.ExecuteCommand(ctx, runCmd, plugin.ExecuteCommandEnvs(envs))
 
+	if err != nil {
+		log.Fatalf("Error retrieving run script: %v", err)
+	}
 
 	fileList, err := getFileOptions()
 	if err != nil {
@@ -244,7 +247,7 @@ func initialMessages(ctx context.Context, clientset *kubernetes.Clientset, envs 
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: fmt.Sprintf("Please select the Job name. Available namespaces: %s %s", out, namespaceString),
+				Plaintext: fmt.Sprintf("Please select the Job name. Available namespaces: %s %s", out.Stdout, namespaceString),
 			},
 			Sections: []api.Section{
 				{
