@@ -61,9 +61,27 @@ func runScript(scriptName string) (*ScriptOutput, error) {
 	return &result, nil
 }
 
+const (
+	kubectlVersion   = "v1.28.1"
+)
+
 // Metadata returns details about the Msg plugin.
 func (MsgExecutor) Metadata(context.Context) (api.MetadataOutput, error) {
 	return api.MetadataOutput{
+		Dependencies: map[string]api.Dependency{
+			"kubectl": {
+				URLs: map[string]string{
+					"windows/amd64": fmt.Sprintf("https://dl.k8s.io/release/%s/bin/windows/amd64/kubectl.exe", kubectlVersion),
+					"darwin/amd64":  fmt.Sprintf("https://dl.k8s.io/release/%s/bin/darwin/amd64/kubectl", kubectlVersion),
+					"darwin/arm64":  fmt.Sprintf("https://dl.k8s.io/release/%s/bin/darwin/arm64/kubectl", kubectlVersion),
+					"linux/amd64":   fmt.Sprintf("https://dl.k8s.io/release/%s/bin/linux/amd64/kubectl", kubectlVersion),
+					"linux/s390x":   fmt.Sprintf("https://dl.k8s.io/release/%s/bin/linux/s390x/kubectl", kubectlVersion),
+					"linux/ppc64le": fmt.Sprintf("https://dl.k8s.io/release/%s/bin/linux/ppc64le/kubectl", kubectlVersion),
+					"linux/arm64":   fmt.Sprintf("https://dl.k8s.io/release/%s/bin/linux/arm64/kubectl", kubectlVersion),
+					"linux/386":     fmt.Sprintf("https://dl.k8s.io/release/%s/bin/linux/386/kubectl", kubectlVersion),
+				},
+			},
+		},
 		Version:     version,
 		Description: description,
 	}, nil
@@ -82,6 +100,10 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 			fmt.Fprintf(os.Stderr, "failed to delete kubeconfig file %s: %v", kubeConfigPath, deleteErr)
 		}
 	}()
+	envs := map[string]string{
+		"KUBECONFIG": kubeConfigPath,
+	}
+
 	config, err := clientcmd.BuildConfigFromFlags("", kubeConfigPath)
 	if err != nil {
 		log.Fatalf("Error building kubeconfig: %v", err)
@@ -128,7 +150,7 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 	}
 
 	if strings.TrimSpace(in.Command) == pluginName {
-		return initialMessages(ctx, clientset), nil
+		return initialMessages(ctx, clientset, envs), nil
 	}
 
 	msg := fmt.Sprintf("Plain command: %s", in.Command)
@@ -190,7 +212,7 @@ func createJobNameSelect(fileList []api.OptionItem, initialOption *api.OptionIte
 	}
 }
 
-func initialMessages(ctx context.Context, clientset *kubernetes.Clientset) executor.ExecuteOutput {
+func initialMessages(ctx context.Context, clientset *kubernetes.Clientset, envs map[string]string) executor.ExecuteOutput {
 
 	// Get the list of namespaces
 	namespaceList, err := clientset.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
@@ -204,6 +226,9 @@ func initialMessages(ctx context.Context, clientset *kubernetes.Clientset) execu
 		namespaces = append(namespaces, ns.Name)
 	}
 	namespaceString := strings.Join(namespaces, ", ")
+	runCmd := "kubectl get ns"
+	out, err := plugin.ExecuteCommand(ctx, runCmd, plugin.ExecuteCommandEnvs(envs))
+
 
 	fileList, err := getFileOptions()
 	if err != nil {
@@ -219,7 +244,7 @@ func initialMessages(ctx context.Context, clientset *kubernetes.Clientset) execu
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: fmt.Sprintf("Please select the Job name. Available namespaces: %s", namespaceString),
+				Plaintext: fmt.Sprintf("Please select the Job name. Available namespaces: %s %s", out, namespaceString),
 			},
 			Sections: []api.Section{
 				{
