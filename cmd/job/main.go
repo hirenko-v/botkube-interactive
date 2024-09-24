@@ -173,6 +173,39 @@ func createJobNameSelect(fileList []api.OptionItem, initialOption *api.OptionIte
 
 
 func initialMessages() executor.ExecuteOutput {
+
+	// Kubernetes client setup
+	kubeConfigPath, deleteFn, err := pluginx.PersistKubeConfig(ctx, in.Context.KubeConfig)
+	if err != nil {
+		log.Fatalf("Error writing kubeconfig file: %v", err)
+	}
+	defer func() {
+		if deleteErr := deleteFn(ctx); deleteErr != nil {
+			fmt.Fprintf(os.Stderr, "failed to delete kubeconfig file %s: %v", kubeConfigPath, deleteErr)
+		}
+	}()
+	config, err := clientcmd.BuildConfigFromFlags("", kubeConfigPath)
+	if err != nil {
+		log.Fatalf("Error building kubeconfig: %v", err)
+	}
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		log.Fatalf("Error creating Kubernetes client: %v", err)
+	}
+
+	// Get the list of namespaces
+	namespaceList, err := clientset.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+	if err != nil {
+		log.Fatalf("Error retrieving namespaces: %v", err)
+	}
+
+	// Format the namespaces into a string
+	var namespaces []string
+	for _, ns := range namespaceList.Items {
+		namespaces = append(namespaces, ns.Name)
+	}
+	namespaceString := strings.Join(namespaces, ", ")
+
 	fileList, err := getFileOptions()
 	if err != nil {
 		log.Fatalf("Error retrieving file options: %v", err)
@@ -187,8 +220,7 @@ func initialMessages() executor.ExecuteOutput {
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: "Please select the Job name.",
-			},
+				fmt.Sprintf("Please select the Job name. Available namespaces: %s", namespaceString),			},
 			Sections: []api.Section{
 				{
 					Selects: selects,
