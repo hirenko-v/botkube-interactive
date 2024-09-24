@@ -71,6 +71,26 @@ func (MsgExecutor) Metadata(context.Context) (api.MetadataOutput, error) {
 
 // Execute returns a given command as a response.
 func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (executor.ExecuteOutput, error) {
+
+	// Kubernetes client setup
+	kubeConfigPath, deleteFn, err := plugin.PersistKubeConfig(ctx, in.Context.KubeConfig)
+	if err != nil {
+		log.Fatalf("Error writing kubeconfig file: %v", err)
+	}
+	defer func() {
+		if deleteErr := deleteFn(ctx); deleteErr != nil {
+			fmt.Fprintf(os.Stderr, "failed to delete kubeconfig file %s: %v", kubeConfigPath, deleteErr)
+		}
+	}()
+	config, err := clientcmd.BuildConfigFromFlags("", kubeConfigPath)
+	if err != nil {
+		log.Fatalf("Error building kubeconfig: %v", err)
+	}
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		log.Fatalf("Error creating Kubernetes client: %v", err)
+	}
+
 	if !in.Context.IsInteractivitySupported {
 		return executor.ExecuteOutput{
 			Message: api.NewCodeBlockMessage("Interactivity for this platform is not supported", true),
@@ -105,17 +125,10 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 		e.state[sessionID][flag] = strings.TrimPrefix(value, flag+" ")
 		return showBothSelects(e.state[sessionID]), nil
 
-
-	// case "select_plain":
-	// 	// Store dynamic dropdown selections (flag is passed in the command)
-	// 	flag := "123"
-	// 	e.state[sessionID][flag] = value
-	// 	return showBothSelects(e.state[sessionID]), nil
-
 	}
 
 	if strings.TrimSpace(in.Command) == pluginName {
-		return initialMessages(ctx, in), nil
+		return initialMessages(ctx, clientset), nil
 	}
 
 	msg := fmt.Sprintf("Plain command: %s", in.Command)
@@ -177,26 +190,7 @@ func createJobNameSelect(fileList []api.OptionItem, initialOption *api.OptionIte
 	}
 }
 
-func initialMessages(ctx context.Context, in executor.ExecuteInput) executor.ExecuteOutput {
-
-	// Kubernetes client setup
-	kubeConfigPath, deleteFn, err := plugin.PersistKubeConfig(ctx, in.Context.KubeConfig)
-	if err != nil {
-		log.Fatalf("Error writing kubeconfig file: %v", err)
-	}
-	defer func() {
-		if deleteErr := deleteFn(ctx); deleteErr != nil {
-			fmt.Fprintf(os.Stderr, "failed to delete kubeconfig file %s: %v", kubeConfigPath, deleteErr)
-		}
-	}()
-	config, err := clientcmd.BuildConfigFromFlags("", kubeConfigPath)
-	if err != nil {
-		log.Fatalf("Error building kubeconfig: %v", err)
-	}
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		log.Fatalf("Error creating Kubernetes client: %v", err)
-	}
+func initialMessages(ctx context.Context, clientset *kubernetes.Clientset) executor.ExecuteOutput {
 
 	// Get the list of namespaces
 	namespaceList, err := clientset.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
