@@ -2,19 +2,20 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
 	"strings"
-	"encoding/json"
 
-	"github.com/hashicorp/go-plugin"
+	go_plugin "github.com/hashicorp/go-plugin"
 	"github.com/kubeshop/botkube/pkg/api"
 	"github.com/kubeshop/botkube/pkg/api/executor"
+	"github.com/kubeshop/botkube/pkg/plugin"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -114,7 +115,7 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 	}
 
 	if strings.TrimSpace(in.Command) == pluginName {
-		return initialMessages(), nil
+		return initialMessages(ctx, in), nil
 	}
 
 	msg := fmt.Sprintf("Plain command: %s", in.Command)
@@ -176,11 +177,10 @@ func createJobNameSelect(fileList []api.OptionItem, initialOption *api.OptionIte
 	}
 }
 
-
-func initialMessages() executor.ExecuteOutput {
+func initialMessages(ctx context.Context, in executor.ExecuteInput) executor.ExecuteOutput {
 
 	// Kubernetes client setup
-	kubeConfigPath, deleteFn, err := pluginx.PersistKubeConfig(ctx, in.Context.KubeConfig)
+	kubeConfigPath, deleteFn, err := plugin.PersistKubeConfig(ctx, in.Context.KubeConfig)
 	if err != nil {
 		log.Fatalf("Error writing kubeconfig file: %v", err)
 	}
@@ -225,7 +225,8 @@ func initialMessages() executor.ExecuteOutput {
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				fmt.Sprintf("Please select the Job name. Available namespaces: %s", namespaceString),			},
+				Plaintext: fmt.Sprintf("Please select the Job name. Available namespaces: %s", namespaceString),
+			},
 			Sections: []api.Section{
 				{
 					Selects: selects,
@@ -400,7 +401,7 @@ func (MsgExecutor) Help(context.Context) (api.Message, error) {
 }
 
 func main() {
-	executor.Serve(map[string]plugin.Plugin{
+	executor.Serve(map[string]go_plugin.Plugin{
 		pluginName: &executor.Plugin{
 			Executor: &MsgExecutor{
 				state: make(map[string]map[string]string),

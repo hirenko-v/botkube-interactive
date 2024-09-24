@@ -3,7 +3,6 @@ module botkube.io/plugins-example
 go 1.21
 
 require (
-	github.com/hashicorp/go-plugin v1.4.10
 	github.com/kubeshop/botkube v1.12.0
 	k8s.io/apimachinery v0.29.0
 	k8s.io/client-go v0.29.0
@@ -50,6 +49,7 @@ require (
 	github.com/hashicorp/go-getter v1.7.3 // indirect
 	github.com/hashicorp/go-hclog v1.5.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
+	github.com/hashicorp/go-plugin v1.4.10 // indirect
 	github.com/hashicorp/go-safetemp v1.0.0 // indirect
 	github.com/hashicorp/go-version v1.6.0 // indirect
 	github.com/hashicorp/yamux v0.1.1 // indirect
