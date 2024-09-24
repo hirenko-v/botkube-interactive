@@ -193,7 +193,7 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 		return executor.ExecuteOutput{}, err
 	}
 	return executor.ExecuteOutput{
-		Message: api.NewCodeBlockMessage(msg, true),
+		Message: api.NewCodeBlockMessage(out, true),
 	}, nil
 }
 
