@@ -226,10 +226,14 @@ func initialMessages(ctx context.Context, clientset *kubernetes.Clientset, envs 
 		namespaces = append(namespaces, ns.Name)
 	}
 	namespaceString := strings.Join(namespaces, ", ")
-	runCmd := "kubectl get ns"
+	runCmd := "kubectl get ns -ojson"
 	out, err := plugin.ExecuteCommand(ctx, runCmd, plugin.ExecuteCommandEnvs(envs))
+	var result []map[any]map[any]string
+	json.Unmarshal([]byte(out.Stdout), &result)
+
 	strout := fmt.Sprint("%s", out.Stdout)
 	fmt.Sprint("%s", namespaceString)
+	fmt.Sprint("%s", strout)
 
 	if err != nil {
 		log.Fatalf("Error retrieving run script: %v", err)
@@ -249,7 +253,7 @@ func initialMessages(ctx context.Context, clientset *kubernetes.Clientset, envs 
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: fmt.Sprintf("Please select the Job name. Available namespaces: %s", strout),
+				Plaintext: fmt.Sprintf("Please select the Job name. Available namespaces: %s", result[0]["metadata"]["name"]),
 			},
 			Sections: []api.Section{
 				{
