@@ -12,7 +12,38 @@ import (
 	"github.com/hashicorp/go-plugin"
 	"github.com/kubeshop/botkube/pkg/api"
 	"github.com/kubeshop/botkube/pkg/api/executor"
+	"github.com/kubeshop/botkube/pkg/loggerx"
+	"github.com/kubeshop/botkube/pkg/plugin"
+	"github.com/kubeshop/botkube/internal/executor/kubectl/builder"
+	"github.com/kubeshop/botkube/internal/command"
 )
+
+
+
+
+
+
+func getBuilderDependencies(log logrus.FieldLogger, kubeconfig string) (*command.CommandGuard, *kubernetes.Clientset, error) {
+	kubeConfig, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	if err != nil {
+		return nil, nil, fmt.Errorf("while creating kube config: %w", err)
+	}
+
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(kubeConfig)
+	if err != nil {
+		return nil, nil, fmt.Errorf("while creating discovery client: %w", err)
+	}
+	guard := command.NewCommandGuard(log, discoveryClient)
+	k8sCli, err := kubernetes.NewForConfig(kubeConfig)
+	if err != nil {
+		return nil, nil, fmt.Errorf("while creating typed k8s client: %w", err)
+	}
+
+	return guard, k8sCli, nil
+}
+
+
+
 
 const (
 	description = "Run Job."
@@ -67,9 +98,52 @@ func (MsgExecutor) Metadata(context.Context) (api.MetadataOutput, error) {
 
 // Execute returns a given command as a response.
 func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (executor.ExecuteOutput, error) {
-	if !in.Context.IsInteractivitySupported {
+
+	if err := plugin.ValidateKubeConfigProvided(PluginName, in.Context.KubeConfig); err != nil {
+		return executor.ExecuteOutput{}, err
+	}
+
+	cfg, err := MergeConfigs(in.Configs)
+	if err != nil {
+		return executor.ExecuteOutput{}, fmt.Errorf("while merging input configs: %w", err)
+	}
+
+	if err := cfg.Validate(); err != nil {
+		return executor.ExecuteOutput{}, fmt.Errorf("while validating configuration: %w", err)
+	}
+
+	log := loggerx.New(cfg.Log)
+
+	cmd, err := normalizeCommand(in.Command)
+	if err != nil {
+		return executor.ExecuteOutput{}, err
+	}
+
+	kubeConfigPath, deleteFn, err := plugin.PersistKubeConfig(ctx, in.Context.KubeConfig)
+	if err != nil {
+		return executor.ExecuteOutput{}, fmt.Errorf("while writing kubeconfig file: %w", err)
+	}
+	defer func() {
+		if deleteErr := deleteFn(ctx); deleteErr != nil {
+			log.Errorf("failed to delete kubeconfig file %s: %w", kubeConfigPath, deleteErr)
+		}
+	}()
+
+	scopedKubectlRunner := NewKubeconfigScopedRunner(e.kcRunner, kubeConfigPath)
+	if builder.ShouldHandle(cmd) {
+		guard, k8sCli, err := getBuilderDependencies(log, kubeConfigPath)
+		if err != nil {
+			return executor.ExecuteOutput{}, fmt.Errorf("while creating builder dependecies: %w", err)
+		}
+
+		kcBuilder := builder.NewKubectl(scopedKubectlRunner, cfg.InteractiveBuilder, log, guard, cfg.DefaultNamespace, k8sCli.CoreV1().Namespaces(), builder.NewK8sAuth(k8sCli.AuthorizationV1()))
+		msg, err := kcBuilder.Handle(ctx, cmd, in.Context.IsInteractivitySupported, in.Context.SlackState)
+		if err != nil {
+			return executor.ExecuteOutput{}, fmt.Errorf("while running command builder: %w", err)
+		}
+
 		return executor.ExecuteOutput{
-			Message: api.NewCodeBlockMessage("Interactivity for this platform is not supported", true),
+			Message: msg,
 		}, nil
 	}
 
@@ -114,7 +188,10 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 		return initialMessages(), nil
 	}
 
-	msg := fmt.Sprintf("Plain command: %s", in.Command)
+	out, err := scopedKubectlRunner.RunKubectlCommand(ctx, cfg.DefaultNamespace, cmd)
+	if err != nil {
+		return executor.ExecuteOutput{}, err
+	}
 	return executor.ExecuteOutput{
 		Message: api.NewCodeBlockMessage(msg, true),
 	}, nil
