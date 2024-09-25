@@ -241,6 +241,7 @@ func initialMessages(ctx context.Context, clientset *kubernetes.Clientset, envs 
 	strout := fmt.Sprint("%s", out.Stdout)
 	fmt.Sprint("%s", namespaceString)
 	fmt.Sprint("%s", strout)
+	fmt.Sprint("%s", namespacesResList[0].Metadata.Name)
 
 	if err != nil {
 		log.Fatalf("Error retrieving run script: %v", err)
@@ -260,7 +261,7 @@ func initialMessages(ctx context.Context, clientset *kubernetes.Clientset, envs 
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: fmt.Sprintf("Please select the Job name. Available namespaces: %s", namespacesResList[0].Metadata.Name),
+				Plaintext: fmt.Sprintf("Please select the Job name"),
 			},
 			Sections: []api.Section{
 				{
