@@ -3,6 +3,7 @@ module botkube.io/plugins-example
 go 1.21
 
 require (
+	github.com/MakeNowJust/heredoc v1.0.0
 	github.com/hashicorp/go-plugin v1.4.10
 	github.com/kubeshop/botkube v1.12.0
 	k8s.io/apimachinery v0.29.0
