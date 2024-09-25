@@ -23,15 +23,15 @@ builds:
     binary: executor_snippet_{{ .Os }}_{{ .Arch }}
 
     no_unique_dist_dir: true
-    env: &env
+    env:
       - CGO_ENABLED=0
-    goos: &goos
+    goos:
       - linux
       - darwin
-    goarch: &goarch
+    goarch:
       - amd64
       - arm64
-    goarm: &goarm
+    goarm:
       - 7
 snapshot:
   name_template: 'v{{ .Version }}'
