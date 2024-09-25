@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
+	"os/exec"
 	"strings"
 
 	"github.com/hashicorp/go-plugin"
@@ -179,30 +181,30 @@ func (SnippetExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exe
     var config Config
     err = yaml.Unmarshal(data, &config)
     if err != nil {
-        log.Fatalf("Error parsing YAML file: %v", err)
+		return executor.ExecuteOutput{}, err
     }
 
     // Get the botToken value
     botToken := config.Communications.DefaultGroup.SocketSlack.BotToken
     if botToken == "" {
-        log.Fatalf("Error: botToken not found in YAML file")
+		return executor.ExecuteOutput{}, errors.New("Bottoken not found")
     }
 
-	// command := "echo ok" // Replace with your command
+	command := "echo ok" // Replace with your command
 
-	// // Step 1: Execute the command
-	// content, err := exec.Command("bash", "-c", command).Output()
-	// if err != nil {
-	// 	log.Fatalf("Error executing command: %v", err)
-	// }
+	// Step 1: Execute the command
+	content, err := exec.Command("bash", "-c", command).Output()
+	if err != nil {
+		return executor.ExecuteOutput{}, err
+	}
 
-	// contentStr := string(content)
-	// if contentStr == "" {
-	// 	contentStr = "null"
-	// }
+	contentStr := string(content)
+	if contentStr == "" {
+		contentStr = "null"
+	}
 
-	// fileSize := len(contentStr)
-	// filename := fmt.Sprintf("YOUR_JOB_NAME-%d.log", 123456789) // Replace with job name and epoch
+	fileSize := len(contentStr)
+	filename := fmt.Sprintf("YOUR_JOB_NAME-%d.log", 123456789) // Replace with job name and epoch
 
 	// // Step 2: Get the upload URL
 	// uploadURL, fileID, err := getUploadURL(botToken, filename, fileSize)
@@ -225,7 +227,7 @@ func (SnippetExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exe
 	// fmt.Printf("%s has been successfully executed\n", command)
 
 	return executor.ExecuteOutput{
-		Message: api.NewCodeBlockMessage("finished", false),
+		Message: api.NewCodeBlockMessage(fmt.Sprintf("finished %s %s", fileSize, filename), false),
 	}, nil
 }
 
