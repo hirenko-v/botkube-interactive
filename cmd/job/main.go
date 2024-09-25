@@ -274,7 +274,7 @@ func initialMessages(ctx context.Context, clientset *kubernetes.Clientset, envs 
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: fmt.Sprintf("Please select the Job name. First namespaces: %s", firstAnnotationValue),
+				Plaintext: fmt.Sprintf("Please select the Job name. First found annotation: %s", firstAnnotationValue),
 			},
 			Sections: []api.Section{
 				{
