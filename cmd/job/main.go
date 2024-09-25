@@ -50,7 +50,9 @@ type Namespace struct {
     } `json:"metadata"`
 }
 
-type NamespaceList []Namespace
+type NamespaceList struct {
+    Items []Namespace `json:"items"`
+}
 
 // Helper function to run the shell script and get the JSON output
 func runScript(scriptName string) (*ScriptOutput, error) {
@@ -241,7 +243,7 @@ func initialMessages(ctx context.Context, clientset *kubernetes.Clientset, envs 
 	strout := fmt.Sprint("%s", out.Stdout)
 	fmt.Sprint("%s", namespaceString)
 	fmt.Sprint("%s", strout)
-	fmt.Sprint("%s", namespacesResList[0].Metadata.Name)
+	fmt.Sprint("%s", namespacesResList.Items[0].Metadata.Name)
 
 	if err != nil {
 		log.Fatalf("Error retrieving run script: %v", err)
@@ -261,7 +263,7 @@ func initialMessages(ctx context.Context, clientset *kubernetes.Clientset, envs 
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: fmt.Sprintf("Please select the Job name"),
+				Plaintext: fmt.Sprintf("Please select the Job name. First namespaces: %s", namespacesResList.Items[0].Metadata.Name),
 			},
 			Sections: []api.Section{
 				{
