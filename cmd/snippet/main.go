@@ -193,7 +193,7 @@ func (SnippetExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exe
 	command := "echo ok" // Replace with your command
 
 	// Step 1: Execute the command
-	content, err := exec.Command("bash", "-c", command).Output()
+	content, err := exec.Command("sh", "-c", command).Output()
 	if err != nil {
 		return executor.ExecuteOutput{}, err
 	}
