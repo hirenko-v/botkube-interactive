@@ -44,14 +44,15 @@ type ScriptOutput struct {
 	Options []Option `json:"options"`
 }
 
-type Namespace struct {
+type CronJobs struct {
     Metadata struct {
-        Name string `json:"name"`
+        Annotations map[string]string `json:"Annotations"`
+		Name string `json:"name"`
     } `json:"metadata"`
 }
 
-type NamespaceList struct {
-    Items []Namespace `json:"items"`
+type CronJobsList struct {
+    Items []CronJobs `json:"items"`
 }
 
 // Helper function to run the shell script and get the JSON output
@@ -231,19 +232,29 @@ func initialMessages(ctx context.Context, clientset *kubernetes.Clientset, envs 
 	}
 
 	// Format the namespaces into a string
+	var firstAnnotationValue string
 	var namespaces []string
-	var namespacesResList NamespaceList
+	var cronJobsResList CronJobsList
 	for _, ns := range namespaceList.Items {
 		namespaces = append(namespaces, ns.Name)
 	}
 	namespaceString := strings.Join(namespaces, ", ")
-	runCmd := "kubectl get ns -ojson"
+	runCmd := "kubectl get cronjobs -A -ojson"
 	out, err := plugin.ExecuteCommand(ctx, runCmd, plugin.ExecuteCommandEnvs(envs))
-	json.Unmarshal([]byte(out.Stdout), &namespacesResList)
+	json.Unmarshal([]byte(out.Stdout), &cronJobsResList)
 	strout := fmt.Sprint("%s", out.Stdout)
 	fmt.Sprint("%s", namespaceString)
 	fmt.Sprint("%s", strout)
-	fmt.Sprint("%s", namespacesResList.Items[0].Metadata.Name)
+	for _,cronJob := range cronJobsResList.Items {
+		if len(cronJob.Metadata.Annotations) > 0 {
+			for _, annotationValue := range cronJob.Metadata.Annotations {
+				firstAnnotationValue = annotationValue
+				break
+			}
+			break
+		}
+	}
+	fmt.Sprint("%s", cronJobsResList.Items[0].Metadata.Name)
 
 	if err != nil {
 		log.Fatalf("Error retrieving run script: %v", err)
@@ -263,7 +274,7 @@ func initialMessages(ctx context.Context, clientset *kubernetes.Clientset, envs 
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: fmt.Sprintf("Please select the Job name. First namespaces: %s", namespacesResList.Items[0].Metadata.Name),
+				Plaintext: fmt.Sprintf("Please select the Job name. First namespaces: %s", firstAnnotationValue),
 			},
 			Sections: []api.Section{
 				{
