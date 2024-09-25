@@ -227,7 +227,7 @@ func (SnippetExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exe
 	// fmt.Printf("%s has been successfully executed\n", command)
 
 	return executor.ExecuteOutput{
-		Message: api.Message{},
+		Message: api.NewCodeBlockMessage("", true),
 	}, nil
 }
 
