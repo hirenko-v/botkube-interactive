@@ -206,28 +206,28 @@ func (SnippetExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exe
 	fileSize := len(contentStr)
 	filename := fmt.Sprintf("YOUR_JOB_NAME-%d.log", 123456789) // Replace with job name and epoch
 
-	// // Step 2: Get the upload URL
-	// uploadURL, fileID, err := getUploadURL(botToken, filename, fileSize)
-	// if err != nil {
-	// 	log.Fatalf("Error getting upload URL: %v", err)
-	// }
+	// Step 2: Get the upload URL
+	uploadURL, fileID, err := getUploadURL(botToken, filename, fileSize)
+	if err != nil {
+		return executor.ExecuteOutput{}, err
+	}
 
-	// // Step 3: Upload the file
-	// err = uploadFile(uploadURL, contentStr)
-	// if err != nil {
-	// 	log.Fatalf("Error uploading file: %v", err)
-	// }
+	// Step 3: Upload the file
+	err = uploadFile(uploadURL, contentStr)
+	if err != nil {
+		return executor.ExecuteOutput{}, err
+	}
 
-	// // Step 4: Complete the upload and post the message
-	// err = completeUpload(botToken, fileID, channelID, message)
-	// if err != nil {
-	// 	log.Fatalf("Error completing upload: %v", err)
-	// }
+	// Step 4: Complete the upload and post the message
+	err = completeUpload(botToken, fileID, channelID, message)
+	if err != nil {
+		return executor.ExecuteOutput{}, err
+	}
 
 	// fmt.Printf("%s has been successfully executed\n", command)
 
 	return executor.ExecuteOutput{
-		Message: api.NewCodeBlockMessage(fmt.Sprintf("finished %s %s", fileSize, filename), false),
+		Message: api.NewCodeBlockMessage(fmt.Sprintf("finished"), false),
 	}, nil
 }
 
