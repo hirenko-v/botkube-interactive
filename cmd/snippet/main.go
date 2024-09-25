@@ -50,7 +50,7 @@ type FileInfo struct {
 	ID string `json:"id"`
 }
 
-const description = ""
+const description = "snippet"
 
 // version is set via ldflags by GoReleaser.
 var version = "dev"

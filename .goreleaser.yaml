@@ -20,7 +20,7 @@ builds:
       - 7
   - id: snippet
     main: cmd/snippet/main.go
-    binary: executor_job_{{ .Os }}_{{ .Arch }}
+    binary: executor_snippet_{{ .Os }}_{{ .Arch }}
 
     no_unique_dist_dir: true
     env: &env
