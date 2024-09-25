@@ -190,7 +190,7 @@ func (SnippetExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exe
 		return executor.ExecuteOutput{}, errors.New("Bottoken not found")
     }
 
-	command := "echo ok" // Replace with your command
+	command := in.Command
 
 	// Step 1: Execute the command
 	content, err := exec.Command("sh", "-c", command).Output()
@@ -227,7 +227,7 @@ func (SnippetExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exe
 	// fmt.Printf("%s has been successfully executed\n", command)
 
 	return executor.ExecuteOutput{
-		Message: api.NewCodeBlockMessage(fmt.Sprintf("finished"), false),
+		Message: api.Message{},
 	}, nil
 }
 
