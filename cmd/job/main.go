@@ -44,6 +44,14 @@ type ScriptOutput struct {
 	Options []Option `json:"options"`
 }
 
+type Namespace struct {
+    Metadata struct {
+        Name string `json:"name"`
+    } `json:"metadata"`
+}
+
+type NamespaceList []Namespace
+
 // Helper function to run the shell script and get the JSON output
 func runScript(scriptName string) (*ScriptOutput, error) {
 	cmd := exec.Command("sh", fmt.Sprintf("/scripts/%s", scriptName), "--json-help")
@@ -222,15 +230,14 @@ func initialMessages(ctx context.Context, clientset *kubernetes.Clientset, envs 
 
 	// Format the namespaces into a string
 	var namespaces []string
+	var namespacesList NamespaceList
 	for _, ns := range namespaceList.Items {
 		namespaces = append(namespaces, ns.Name)
 	}
 	namespaceString := strings.Join(namespaces, ", ")
 	runCmd := "kubectl get ns -ojson"
 	out, err := plugin.ExecuteCommand(ctx, runCmd, plugin.ExecuteCommandEnvs(envs))
-	var result any
-	json.Unmarshal([]byte(out.Stdout), &result)
-	firstns := result.([]map[any]map[any]string)
+	json.Unmarshal([]byte(out.Stdout), &namespacesList)
 	strout := fmt.Sprint("%s", out.Stdout)
 	fmt.Sprint("%s", namespaceString)
 	fmt.Sprint("%s", strout)
@@ -253,7 +260,7 @@ func initialMessages(ctx context.Context, clientset *kubernetes.Clientset, envs 
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: fmt.Sprintf("Please select the Job name. Available namespaces: %s", firstns[0]["metadata"]["name"]),
+				Plaintext: fmt.Sprintf("Please select the Job name. Available namespaces: %s", namespacesList[0].Metadata.Name),
 			},
 			Sections: []api.Section{
 				{
