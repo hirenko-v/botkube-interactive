@@ -193,9 +193,9 @@ func (SnippetExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exe
 	command := in.Command
 
 	// Step 1: Execute the command
-	content, err := exec.Command("sh", "-c", command).Output()
+	content, err := exec.Command("sh", "-c", fmt.Sprintf("echo %s", command)).Output()
 	if err != nil {
-		return executor.ExecuteOutput{}, err
+		return executor.ExecuteOutput{}, errors.New(fmt.Sprintf("Failet to run command, %s", err))
 	}
 
 	contentStr := string(content)
