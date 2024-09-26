@@ -193,7 +193,7 @@ func (SnippetExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exe
     }
 
 	// Step 1: Execute the command
-	content, err := exec.Command("sh", "-c", fmt.Sprintf("echo %s", value)).Output()
+	content, err := exec.Command("sh", "-c", value).Output()
 	if err != nil {
 		return executor.ExecuteOutput{}, errors.New(fmt.Sprintf("Failed to run command, %s", err))
 	}
@@ -251,8 +251,8 @@ func (SnippetExecutor) Help(context.Context) (api.Message, error) {
 func parseCommand(cmd string) (action, value string) {
 	parts := strings.Fields(cmd)
 	if len(parts) > 1 {
-		action = parts[1]
-		value = strings.Join(parts[2:], " ")
+		action = parts[0]
+		value = strings.Join(parts[1:], " ")
 	}
 	return
 }
