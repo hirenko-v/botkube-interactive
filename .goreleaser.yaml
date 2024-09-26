@@ -33,6 +33,21 @@ builds:
       - arm64
     goarm:
       - 7
+  - id: job-script
+    main: cmd/job-script/main.go
+    binary: executor_job-script_{{ .Os }}_{{ .Arch }}
+
+    no_unique_dist_dir: true
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    goarm:
+      - 7
 snapshot:
   name_template: 'v{{ .Version }}'
 
