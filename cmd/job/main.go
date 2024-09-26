@@ -143,8 +143,8 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 		if err != nil {
 			fmt.Println("Error unmarshalling JSON:", err)
 		}
-		annotations := cronJob["metadata"].(map[string]interface{})["annotations"].(map[string]interface{})
-		annotations["botkube"] = "true" 
+		// annotations := cronJob["metadata"].(map[string]interface{})["annotations"].(map[string]interface{})
+		// annotations["botkube"] = "true" 
 		// Navigate to the container args
 		template := cronJob["spec"].(map[string]interface{})["template"].(map[string]interface{})
 		container := template["spec"].(map[string]interface{})["containers"].([]interface{})[0].(map[string]interface{})
