@@ -144,9 +144,7 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 		}
 
 		// Navigate to the container args
-		spec := cronJob["spec"].(map[string]interface{})
-		jobTemplate := spec["jobTemplate"].(map[string]interface{})
-		template := jobTemplate["spec"].(map[string]interface{})["template"].(map[string]interface{})
+		template := cronJob["spec"].(map[string]interface{})["template"].(map[string]interface{})
 		container := template["spec"].(map[string]interface{})["containers"].([]interface{})[0].(map[string]interface{})
 
 		// Modify the first container args
