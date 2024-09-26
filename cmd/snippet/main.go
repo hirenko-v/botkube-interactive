@@ -162,9 +162,26 @@ func postForm(urlString string, data map[string]string) ([]byte, error) {
 }
 
 
+const (
+	kubectlVersion   = "v1.28.1"
+)
 
 func (SnippetExecutor) Metadata(context.Context) (api.MetadataOutput, error) {
 	return api.MetadataOutput{
+		Dependencies: map[string]api.Dependency{
+			"kubectl": {
+				URLs: map[string]string{
+					"windows/amd64": fmt.Sprintf("https://dl.k8s.io/release/%s/bin/windows/amd64/kubectl.exe", kubectlVersion),
+					"darwin/amd64":  fmt.Sprintf("https://dl.k8s.io/release/%s/bin/darwin/amd64/kubectl", kubectlVersion),
+					"darwin/arm64":  fmt.Sprintf("https://dl.k8s.io/release/%s/bin/darwin/arm64/kubectl", kubectlVersion),
+					"linux/amd64":   fmt.Sprintf("https://dl.k8s.io/release/%s/bin/linux/amd64/kubectl", kubectlVersion),
+					"linux/s390x":   fmt.Sprintf("https://dl.k8s.io/release/%s/bin/linux/s390x/kubectl", kubectlVersion),
+					"linux/ppc64le": fmt.Sprintf("https://dl.k8s.io/release/%s/bin/linux/ppc64le/kubectl", kubectlVersion),
+					"linux/arm64":   fmt.Sprintf("https://dl.k8s.io/release/%s/bin/linux/arm64/kubectl", kubectlVersion),
+					"linux/386":     fmt.Sprintf("https://dl.k8s.io/release/%s/bin/linux/386/kubectl", kubectlVersion),
+				},
+			},
+		},
 		Version:     version,
 		Description: description,
 	}, nil
