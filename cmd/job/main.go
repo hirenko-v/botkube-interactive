@@ -199,7 +199,7 @@ func getBotkubeJobs(ctx context.Context, envs map[string]string) ([]Job) {
 		_, ok := cronJob.Metadata.Annotations["botkubeJobArgs"]
 		if ok {
 			var args []Arg
-			json.Unmarshal([]byte(out.Stdout), &args)
+			json.Unmarshal([]byte(cronJob.Metadata.Annotations["botkubeJobArgs"]), &args)
 			jobList = append(jobList, Job{
 				Name: cronJob.Metadata.Name,
 				Namespace: cronJob.Metadata.Namespace,
@@ -220,24 +220,6 @@ func initialMessages(ctx context.Context, envs map[string]string) executor.Execu
 			Value: job.Name,
 		})
 	}
-
-// TMP
-var flagKey string
-for _, job := range jobs {
-	if job.Name == "update-chrome-data-incentives-stack-1" {
-		jobList = append(jobList, api.OptionItem{
-			Name:  "ffff",
-			Value: "ffff",
-		})
-		for _, option := range job.Args {
-			// Construct the flag key for the state
-			flagKey = fmt.Sprintf("%s", option.Flag)
-		}
-	}
-}
-
-//
-
 
 	cmdPrefix := func(cmd string) string {
 		return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
