@@ -36,8 +36,8 @@ type Config struct {
 }
 
 const (
-	channelID = "C07MUPT2QRE"  // Replace with your channel ID
-	message   = "test"     // Replace with your message
+	channelID = "C07MUPT2QRE"
+	message   = "Output:"
 )
 
 type UploadURLResponse struct {
