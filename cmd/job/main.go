@@ -221,17 +221,6 @@ func initialMessages(ctx context.Context, envs map[string]string) executor.Execu
 		})
 	}
 
-	for _, job := range jobs {
-		if job.Name == "update-chrome-data-incentives-stack-1" {
-			for _, option := range job.Args {
-				jobList = append(jobList, api.OptionItem{
-					Name:  option.Flag,
-					Value: option.Flag,
-				})
-			}
-		}
-	}
-
 	cmdPrefix := func(cmd string) string {
 		return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
 	}
@@ -398,11 +387,14 @@ func buildFinalCommand(state map[string]string, options []Arg) string {
 		// Construct the key as used in the state map
 		flagKey := fmt.Sprintf("%s-%s", state["first"], option.Flag)
 		if value, ok := state[flagKey]; ok && value != "" {
+			if option.Type == "bool" {
+				value = strings.Fields(value)[0]
+			}
 			commandParts = append(commandParts, value)
 		}
 	}
 
-	return fmt.Sprintf("run %s", strings.Join(commandParts, " "))
+	return fmt.Sprintf("job run %s", strings.Join(commandParts, " "))
 }
 
 func (MsgExecutor) Help(context.Context) (api.Message, error) {
