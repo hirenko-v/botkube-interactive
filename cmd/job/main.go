@@ -230,7 +230,7 @@ func initialMessages(ctx context.Context, envs map[string]string) executor.Execu
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: fmt.Sprintf("Please select the Job name %s", flagKey),
+				Plaintext: "Please select the Job name",
 			},
 			Sections: []api.Section{
 				{
