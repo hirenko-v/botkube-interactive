@@ -221,6 +221,17 @@ func initialMessages(ctx context.Context, envs map[string]string) executor.Execu
 		})
 	}
 
+	for _, job := range jobs {
+		if job.Name == "update-chrome-data-incentives-stack-1" {
+			for _, option := range job.Args {
+				jobList = append(jobList, api.OptionItem{
+					Name:  option.Flag,
+					Value: option.Flag,
+				})
+			}
+		}
+	}
+
 	cmdPrefix := func(cmd string) string {
 		return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
 	}
