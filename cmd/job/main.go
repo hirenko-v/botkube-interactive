@@ -131,9 +131,9 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 	case "run":
 		fields := strings.Fields(value)
 		args := fields[2:]
-	// 	runCmd := fmt.Sprintf("kubectl get cronjob %s -n %s -ojson", fields[0], fields[1])
-	// 	out, _ := plugin.ExecuteCommand(ctx, runCmd, plugin.ExecuteCommandEnvs(envs))
-	// 	var cronJobJson map[string]interface{}
+		runCmd := fmt.Sprintf("kubectl get cronjob %s -n %s -ojson", fields[0], fields[1])
+		out, _ := plugin.ExecuteCommand(ctx, runCmd, plugin.ExecuteCommandEnvs(envs))
+		// var cronJobJson map[string]interface{}
 	// 	json.Unmarshal([]byte(out.Stdout), &cronJobJson)
 	// 	cronJobJson["spec"].(map[string]interface{})["template"].(map[string]interface{})["spec"].(map[string]interface{})["containers"].([]interface{})[0].(map[string]interface{})["args"] = args
 	// // Prepare the patch JSON
@@ -157,10 +157,10 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 		// }
 
 		// // Save the patched JSON to a file
-		// err = os.WriteFile("/tmp/patched_cronjob.json", patchData, 0644) // Create or overwrite the file
-		// if err != nil {
-		// 	log.Fatalf("error writing patched JSON to file: %w", err)
-		// }
+		err = os.WriteFile("/tmp/patched_cronjob.json", []byte(out.Stdout), 0644) // Create or overwrite the file
+		if err != nil {
+			log.Fatalf("error writing patched JSON to file: %w", err)
+		}
 		return executor.ExecuteOutput{
 			Message: api.NewCodeBlockMessage(fmt.Sprintf("saved, %s",args), true),
 		}, nil
