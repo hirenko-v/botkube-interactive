@@ -157,7 +157,7 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 		}
 
 		// Save the patched JSON to a file
-		err = os.WriteFile("patched_cronjob.json", patchData, 0644) // Create or overwrite the file
+		err = os.WriteFile("/tmp/patched_cronjob.json", patchData, 0644) // Create or overwrite the file
 		if err != nil {
 			log.Fatalf("error writing patched JSON to file: %w", err)
 		}
