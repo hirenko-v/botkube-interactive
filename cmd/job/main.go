@@ -153,25 +153,6 @@ func parseCommand(cmd string) (action, value string) {
 	return
 }
 
-// getFileOptions retrieves file options from the /scripts directory.
-func getFileOptions() ([]api.OptionItem, error) {
-	dir := "/scripts"
-	files, err := os.ReadDir(dir)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open directory: %v", err)
-	}
-
-	var fileList []api.OptionItem
-	for _, file := range files {
-		if !file.IsDir() && file.Name() != "..data" {
-			fileList = append(fileList, api.OptionItem{
-				Name:  file.Name(),
-				Value: file.Name(),
-			})
-		}
-	}
-	return fileList, nil
-}
 
 // Helper function to create the selects for the job name
 func createJobNameSelect(fileList []api.OptionItem, initialOption *api.OptionItem, cmdPrefix string) api.Selects {
@@ -244,13 +225,13 @@ func initialMessages(ctx context.Context, envs map[string]string) executor.Execu
 var flagKey string
 for _, job := range jobs {
 	if job.Name == "update-chrome-data-incentives-stack-1" {
+		jobList = append(jobList, api.OptionItem{
+			Name:  "ffff",
+			Value: "ffff",
+		})
 		for _, option := range job.Args {
 			// Construct the flag key for the state
 			flagKey = fmt.Sprintf("%s", option.Flag)
-			jobList = append(jobList, api.OptionItem{
-				Name:  "ffff",
-				Value: "ffff",
-			})
 		}
 	}
 }
