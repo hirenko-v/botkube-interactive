@@ -247,6 +247,10 @@ for _, job := range jobs {
 		for _, option := range job.Args {
 			// Construct the flag key for the state
 			flagKey = fmt.Sprintf("%s", option.Flag)
+			jobList = append(jobList, api.OptionItem{
+				Name:  "ffff",
+				Value: "ffff",
+			})
 		}
 	}
 }
