@@ -133,31 +133,30 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 		args := fields[2:]
 		runCmd := fmt.Sprintf("kubectl get cronjob %s -n %s -ojson", fields[0], fields[1])
 		out, _ := plugin.ExecuteCommand(ctx, runCmd, plugin.ExecuteCommandEnvs(envs))
-		// var cronJobJson map[string]interface{}
-	// 	json.Unmarshal([]byte(out.Stdout), &cronJobJson)
-	// 	cronJobJson["spec"].(map[string]interface{})["template"].(map[string]interface{})["spec"].(map[string]interface{})["containers"].([]interface{})[0].(map[string]interface{})["args"] = args
-	// // Prepare the patch JSON
-	// 	patchJson := map[string]interface{}{
-	// 		"spec": map[string]interface{}{
-	// 			"template": map[string]interface{}{
-	// 				"spec": map[string]interface{}{
-	// 					"containers": []interface{}{
-	// 						map[string]interface{}{
-	// 							"args": args,
-	// 						},
-	// 					},
-	// 				},
-	// 			},
-	// 		},
-	// 	}
-		// // Marshal the patched JSON to a byte slice
-		// patchData, err := json.MarshalIndent(patchJson, "", "  ") // Use json.MarshalIndent for pretty printing
-		// if err != nil {
-		// 	log.Fatalf("error marshalling patch JSON: %w", err)
-		// }
+		var cronJob map[string]interface{}
+		err := json.Unmarshal([]byte(out.Stdout), &cronJob)
+		if err != nil {
+			fmt.Println("Error unmarshalling JSON:", err)
+		}
+
+		// Navigate to the container args
+		spec := cronJob["spec"].(map[string]interface{})
+		jobTemplate := spec["jobTemplate"].(map[string]interface{})
+		template := jobTemplate["spec"].(map[string]interface{})["template"].(map[string]interface{})
+		container := template["spec"].(map[string]interface{})["containers"].([]interface{})[0].(map[string]interface{})
+
+		// Modify the first container args
+		newArgs := []interface{}{"-insert_fr", "-new_arg1", "-new_arg2"} // Add your new args here
+		container["args"] = newArgs
+
+		// Marshal the modified map back to JSON
+		modifiedJSON, err := json.MarshalIndent(cronJob, "", "  ")
+		if err != nil {
+			fmt.Println("Error marshalling JSON:", err)
+		}
 
 		// // Save the patched JSON to a file
-		err = os.WriteFile("/tmp/patched_cronjob.json", []byte(out.Stdout), 0644) // Create or overwrite the file
+		err = os.WriteFile("/tmp/patched_cronjob.json", modifiedJSON, 0644) // Create or overwrite the file
 		if err != nil {
 			log.Fatalf("error writing patched JSON to file: %w", err)
 		}
