@@ -11,14 +11,16 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/hashicorp/go-plugin"
+	go_plugin "github.com/hashicorp/go-plugin"
 	"github.com/kubeshop/botkube/pkg/api"
 	"github.com/kubeshop/botkube/pkg/api/executor"
+	"github.com/kubeshop/botkube/pkg/plugin"
 	"gopkg.in/yaml.v2"
 )
 
@@ -171,7 +173,7 @@ func (SnippetExecutor) Metadata(context.Context) (api.MetadataOutput, error) {
 // Execute returns a given command as a response.
 //
 //nolint:gocritic  //hugeParam: in is heavy (80 bytes); consider passing it by pointer
-func (SnippetExecutor) Execute(_ context.Context, in executor.ExecuteInput) (executor.ExecuteOutput, error) {
+func (SnippetExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (executor.ExecuteOutput, error) {
 
 	_, value := parseCommand(in.Command)
 
@@ -195,17 +197,33 @@ func (SnippetExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exe
     }
 
 	// Step 1: Execute the command
-	content, err := exec.Command("sh", "-c", value).Output()
-	if err != nil {
-		return executor.ExecuteOutput{}, errors.New(fmt.Sprintf("Failed to run command, %s", err))
+	content := ""
+	if strings.HasPrefix(value, "kubectl") {
+		// Kubernetes client setup
+		kubeConfigPath, deleteFn, err := plugin.PersistKubeConfig(ctx, in.Context.KubeConfig)
+		if err != nil {
+			log.Fatalf("Error writing kubeconfig file: %v", err)
+		}
+		defer func() {
+			if deleteErr := deleteFn(ctx); deleteErr != nil {
+				fmt.Fprintf(os.Stderr, "failed to delete kubeconfig file %s: %v", kubeConfigPath, deleteErr)
+			}
+		}()
+		envs := map[string]string{
+			"KUBECONFIG": kubeConfigPath,
+		}
+
+		out, err := plugin.ExecuteCommand(ctx, value, plugin.ExecuteCommandEnvs(envs))
+		content = out.Stdout
+	} else {
+		out, err := exec.Command("sh", "-c", value).Output()
+		if err != nil {
+			return executor.ExecuteOutput{}, errors.New(fmt.Sprintf("Failed to run command, %s", err))
+		}
+		content = string(out)
 	}
 
-	contentStr := string(content)
-	if contentStr == "" {
-		contentStr = "null"
-	}
-
-	fileSize := len(contentStr)
+	fileSize := len(content)
 	filename := fmt.Sprintf("%s.log",  strconv.FormatInt(time.Now().Unix(), 10))
 
 	// Step 2: Get the upload URL
@@ -215,7 +233,7 @@ func (SnippetExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exe
 	}
 
 	// Step 3: Upload the file
-	err = uploadFile(uploadURL, contentStr)
+	err = uploadFile(uploadURL, content)
 	if err != nil {
 		return executor.ExecuteOutput{}, err
 	}
@@ -229,7 +247,7 @@ func (SnippetExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exe
 	// fmt.Printf("%s has been successfully executed\n", command)
 
 	return executor.ExecuteOutput{
-		Message: api.NewCodeBlockMessage(fmt.Sprintf("Command %s resoult sent, please check attachement the following name: %s", value, filename), false),
+		Message: api.NewCodeBlockMessage(fmt.Sprintf("Command %s result sent, please check attachement the following name: %s", value, filename), false),
 	}, nil
 }
 
@@ -260,7 +278,7 @@ func parseCommand(cmd string) (action, value string) {
 }
 
 func main() {
-	executor.Serve(map[string]plugin.Plugin{
+	executor.Serve(map[string]go_plugin.Plugin{
 		"snippet": &executor.Plugin{
 			Executor: &SnippetExecutor{},
 		},
