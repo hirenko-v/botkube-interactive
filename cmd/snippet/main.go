@@ -171,6 +171,8 @@ func (SnippetExecutor) Metadata(context.Context) (api.MetadataOutput, error) {
 //nolint:gocritic  //hugeParam: in is heavy (80 bytes); consider passing it by pointer
 func (SnippetExecutor) Execute(_ context.Context, in executor.ExecuteInput) (executor.ExecuteOutput, error) {
 
+	_, value := parseCommand(in.Command)
+
     // Load the YAML file
     data, err := ioutil.ReadFile("/config/comm_config.yaml")
     if err != nil {
@@ -190,10 +192,8 @@ func (SnippetExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exe
 		return executor.ExecuteOutput{}, errors.New("Bottoken not found")
     }
 
-	command := in.Command
-
 	// Step 1: Execute the command
-	content, err := exec.Command("sh", "-c", fmt.Sprintf("echo %s", command)).Output()
+	content, err := exec.Command("sh", "-c", value).Output()
 	if err != nil {
 		return executor.ExecuteOutput{}, errors.New(fmt.Sprintf("Failed to run command, %s", err))
 	}
@@ -246,6 +246,15 @@ func (SnippetExecutor) Help(context.Context) (api.Message, error) {
 			},
 		},
 	}, nil
+}
+
+func parseCommand(cmd string) (action, value string) {
+	parts := strings.Fields(cmd)
+	if len(parts) > 1 {
+		action = parts[1]
+		value = strings.Join(parts[2:], " ")
+	}
+	return
 }
 
 func main() {
