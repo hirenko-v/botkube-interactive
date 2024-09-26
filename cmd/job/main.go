@@ -6,16 +6,12 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"strings"
 
 	go_plugin "github.com/hashicorp/go-plugin"
 	"github.com/kubeshop/botkube/pkg/api"
 	"github.com/kubeshop/botkube/pkg/api/executor"
 	"github.com/kubeshop/botkube/pkg/plugin"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
 const (
@@ -32,44 +28,24 @@ type MsgExecutor struct {
 }
 
 // JSON structure for the script output
-type Option struct {
-	Flags       []string `json:"flags"`
+type BotKubeAnnotation struct {
+	Flag        string   `json:"flag"`
 	Description string   `json:"description"`
 	Values      []string `json:"values,omitempty"`
 	Default     string   `json:"default,omitempty"`
 	Type        string   `json:"type"`
 }
 
-type ScriptOutput struct {
-	Options []Option `json:"options"`
-}
-
 type CronJobs struct {
     Metadata struct {
         Annotations map[string]string `json:"Annotations"`
 		Name string `json:"name"`
+		Namespace string `json:"namespace"`
     } `json:"metadata"`
 }
 
 type CronJobsList struct {
     Items []CronJobs `json:"items"`
-}
-
-// Helper function to run the shell script and get the JSON output
-func runScript(scriptName string) (*ScriptOutput, error) {
-	cmd := exec.Command("sh", fmt.Sprintf("/scripts/%s", scriptName), "--json-help")
-
-	output, err := cmd.Output()
-	if err != nil {
-		return nil, fmt.Errorf("failed to run script: %v", err)
-	}
-
-	// Parse JSON output
-	var result ScriptOutput
-	if err := json.Unmarshal(output, &result); err != nil {
-		return nil, fmt.Errorf("failed to parse script output: %v", err)
-	}
-	return &result, nil
 }
 
 const (
@@ -114,12 +90,6 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 	envs := map[string]string{
 		"KUBECONFIG": kubeConfigPath,
 	}
-
-	config, err := clientcmd.BuildConfigFromFlags("", kubeConfigPath)
-	if err != nil {
-		log.Fatalf("Error building kubeconfig: %v", err)
-	}
-	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		log.Fatalf("Error creating Kubernetes client: %v", err)
 	}
@@ -150,18 +120,18 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 
 		// Store the selection from the first dropdown
 		e.state[sessionID]["first"] = value
-		return showBothSelects(e.state[sessionID]), nil
+		return showBothSelects(ctx, envs, e.state[sessionID]), nil
 
 	case "select_dynamic":
 		// Store dynamic dropdown selections (flag is passed in the command)
 		flag := strings.Fields(value)[0]
 		e.state[sessionID][flag] = strings.TrimPrefix(value, flag+" ")
-		return showBothSelects(e.state[sessionID]), nil
+		return showBothSelects(ctx, envs, e.state[sessionID]), nil
 
 	}
 
 	if strings.TrimSpace(in.Command) == pluginName {
-		return initialMessages(ctx, clientset, envs), nil
+		return initialMessages(ctx, envs), nil
 	}
 
 	msg := fmt.Sprintf("Plain command: %s", in.Command)
@@ -223,58 +193,63 @@ func createJobNameSelect(fileList []api.OptionItem, initialOption *api.OptionIte
 	}
 }
 
-func initialMessages(ctx context.Context, clientset *kubernetes.Clientset, envs map[string]string) executor.ExecuteOutput {
+type Arg struct {
+	Flag        string `json:"flag"`
+	Description string `json:"description"`
+	Type        string `json:"type"`
+	Default     string `json:"default"`
+	Values      []string `json:"values,omitempty"`
+}
 
-	// Get the list of namespaces
-	namespaceList, err := clientset.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
-	if err != nil {
-		log.Fatalf("Error retrieving namespaces: %v", err)
-	}
+type Job struct {
+	Name      string `json:"name"`
+	Namespace string `json:"namespace"`
+	Args      []Arg  `json:"args"`
+}
 
-	// Format the namespaces into a string
-	var firstAnnotationValue string
-	var namespaces []string
-	var cronJobsResList CronJobsList
-	for _, ns := range namespaceList.Items {
-		namespaces = append(namespaces, ns.Name)
-	}
-	namespaceString := strings.Join(namespaces, ", ")
+func getBotkubeJobs(ctx context.Context, envs map[string]string) ([]Job) {
+	var jobList []Job
+
 	runCmd := "kubectl get cronjobs -A -ojson"
-	out, err := plugin.ExecuteCommand(ctx, runCmd, plugin.ExecuteCommandEnvs(envs))
+	out, _ := plugin.ExecuteCommand(ctx, runCmd, plugin.ExecuteCommandEnvs(envs))
+	var cronJobsResList CronJobsList
 	json.Unmarshal([]byte(out.Stdout), &cronJobsResList)
-	strout := fmt.Sprint("%s", out.Stdout)
-	fmt.Sprint("%s", namespaceString)
-	fmt.Sprint("%s", strout)
 	for _,cronJob := range cronJobsResList.Items {
-		if len(cronJob.Metadata.Annotations) > 0 {
-			for _, annotationValue := range cronJob.Metadata.Annotations {
-				firstAnnotationValue = annotationValue
-				break
-			}
-			break
+		_, ok := cronJob.Metadata.Annotations["botkubeJobArgs"]
+		if ok {
+			var args []Arg
+			json.Unmarshal([]byte(out.Stdout), &args)
+			jobList = append(jobList, Job{
+				Name: cronJob.Metadata.Name,
+				Namespace: cronJob.Metadata.Namespace,
+				Args: args,
+			})
 		}
 	}
-	fmt.Sprint("%s", cronJobsResList.Items[0].Metadata.Name)
+	return jobList
+}
 
-	if err != nil {
-		log.Fatalf("Error retrieving run script: %v", err)
-	}
+func initialMessages(ctx context.Context, envs map[string]string) executor.ExecuteOutput {
 
-	fileList, err := getFileOptions()
-	if err != nil {
-		log.Fatalf("Error retrieving file options: %v", err)
+	var jobList []api.OptionItem
+	jobs := getBotkubeJobs(ctx, envs)
+	for _, job := range jobs {
+		jobList = append(jobList, api.OptionItem{
+			Name:  job.Name,
+			Value: job.Name,
+		})
 	}
 
 	cmdPrefix := func(cmd string) string {
 		return fmt.Sprintf("%s %s %s", api.MessageBotNamePlaceholder, pluginName, cmd)
 	}
 
-	selects := createJobNameSelect(fileList, nil, cmdPrefix("select_first"))
+	selects := createJobNameSelect(jobList, nil, cmdPrefix("select_first"))
 
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: fmt.Sprintf("Please select the Job name. First found annotation: %s", firstAnnotationValue),
+				Plaintext: "Please select the Job name",
 			},
 			Sections: []api.Section{
 				{
@@ -288,10 +263,14 @@ func initialMessages(ctx context.Context, clientset *kubernetes.Clientset, envs 
 }
 
 // showBothSelects dynamically generates dropdowns based on the selected options.
-func showBothSelects(state map[string]string) executor.ExecuteOutput {
-	fileList, err := getFileOptions()
-	if err != nil {
-		log.Fatalf("Error retrieving file options: %v", err)
+func showBothSelects(ctx context.Context, envs map[string]string, state map[string]string) executor.ExecuteOutput {
+	var jobList []api.OptionItem
+	jobs := getBotkubeJobs(ctx, envs)
+	for _, job := range jobs {
+		jobList = append(jobList, api.OptionItem{
+			Name:  job.Name,
+			Value: job.Name,
+		})
 	}
 
 	btnBuilder := api.NewMessageButtonBuilder()
@@ -303,87 +282,82 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 		Name:  state["first"],
 		Value: state["first"],
 	}
-	selects := createJobNameSelect(fileList, initialOption, cmdPrefix("select_first"))
+	selects := createJobNameSelect(jobList, initialOption, cmdPrefix("select_first"))
 
 	sections := []api.Section{
 		{
 			Selects: selects,
 		},
 	}
-
-	// Run the script to get dynamic options based on the first selection
-	scriptOutput, err := runScript(state["first"])
-	if err != nil {
-		log.Fatalf("Error running script: %v", err)
-	}
+	var jobArgs []Arg
 	// Create multiple dropdowns based on the options in the script output
-	for _, option := range scriptOutput.Options {
-		// Skip the help options (-h, --help)
-		if option.Flags[0] == "-h" {
-			continue
-		}
+	for _, job := range jobs {
+		if job.Name == state["first"] {
+			jobArgs = job.Args
+			for _, option := range job.Args {
+				// Construct the flag key for the state
+				flagKey := fmt.Sprintf("%s-%s", state["first"], option.Flag)
 
-		// Construct the flag key for the state
-		flagKey := fmt.Sprintf("%s-%s", state["first"], option.Flags[0])
+				if option.Type == "bool" || option.Type == "dropdown" {
 
-		if option.Type == "bool" || option.Type == "dropdown" {
-
-			var dropdownOptions []api.OptionItem
-			boolValues := []string{"true", "false"}
-			values := option.Values; if option.Type == "bool" { values = boolValues }
-			for _, value := range values {
-				dropdownOptions = append(dropdownOptions, api.OptionItem{
-					Name:  value,
-					Value: fmt.Sprintf("%s %s", option.Flags[0], value),
-				})
-			}
+					var dropdownOptions []api.OptionItem
+					boolValues := []string{"true", "false"}
+					values := option.Values; if option.Type == "bool" { values = boolValues }
+					for _, value := range values {
+						dropdownOptions = append(dropdownOptions, api.OptionItem{
+							Name:  value,
+							Value: fmt.Sprintf("%s %s", option.Flag, value),
+						})
+					}
 
 
-			// Check if there's an InitialOption and update the state if it’s not already set
-			if _, exists := state[flagKey]; !exists && option.Default != "" {
-				state[flagKey] = fmt.Sprintf("%s %s", option.Flags[0], option.Default)
-			}
+					// Check if there's an InitialOption and update the state if it’s not already set
+					if _, exists := state[flagKey]; !exists && option.Default != "" {
+						state[flagKey] = fmt.Sprintf("%s %s", option.Flag, option.Default)
+					}
 
-			var initialOption *api.OptionItem
-			if option.Default != "" {
-				initialOption = &api.OptionItem{
-					Name:  option.Default,
-					Value: fmt.Sprintf("%s %s", option.Flags[0], option.Default),
+					var initialOption *api.OptionItem
+					if option.Default != "" {
+						initialOption = &api.OptionItem{
+							Name:  option.Default,
+							Value: fmt.Sprintf("%s %s", option.Flag, option.Default),
+						}
+					} else {
+						initialOption = nil // Set to nil if Default is not set
+					}
+
+					// Add the dropdown with the InitialOption if available
+					sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
+						Name:    option.Description, // Adjust name based on flags
+						Command: cmdPrefix(fmt.Sprintf("select_dynamic %s", flagKey)), // Handle dynamic dropdown
+						OptionGroups: []api.OptionGroup{
+							{
+								Name:    option.Description,
+								Options: dropdownOptions,
+							},
+						},
+						InitialOption: initialOption,
+					})
 				}
-			} else {
-				initialOption = nil // Set to nil if Default is not set
-			}
 
-			// Add the dropdown with the InitialOption if available
-			sections[0].Selects.Items = append(sections[0].Selects.Items, api.Select{
-				Name:    option.Description, // Adjust name based on flags
-				Command: cmdPrefix(fmt.Sprintf("select_dynamic %s", flagKey)), // Handle dynamic dropdown
-				OptionGroups: []api.OptionGroup{
-					{
-						Name:    option.Description,
-						Options: dropdownOptions,
-					},
-				},
-				InitialOption: initialOption,
-			})
-		}
-
-		if option.Type == "text" {
-			if len(sections) < 2 {
-				sections = append(sections, api.Section{})
+				if option.Type == "text" {
+					if len(sections) < 2 {
+						sections = append(sections, api.Section{})
+					}
+					sections[1].PlaintextInputs = append(sections[1].PlaintextInputs, api.LabelInput{
+						Command: cmdPrefix(fmt.Sprintf("select_dynamic %s %s ", flagKey, option.Flag)),
+						Text:        option.Description,
+						Placeholder: "Please write parameter value",
+						DispatchedAction: api.DispatchInputActionOnCharacter,
+					})
+				}
 			}
-			sections[1].PlaintextInputs = append(sections[1].PlaintextInputs, api.LabelInput{
-				Command: cmdPrefix(fmt.Sprintf("select_dynamic %s %s ", flagKey, option.Flags[0])),
-				Text:        option.Description,
-				Placeholder: "Please write parameter value",
-				DispatchedAction: api.DispatchInputActionOnCharacter,
-			})
 		}
 	}
 
 	// If all selections are made, show the run button
-	if allSelectionsMade(state, scriptOutput.Options) {
-		code := buildFinalCommand(state, scriptOutput.Options)
+	if allSelectionsMade(state, jobArgs) {
+		code := buildFinalCommand(state, jobArgs)
 		sections = append(sections, api.Section{
 			Base: api.Base{
 				Body: api.Body{
@@ -409,12 +383,9 @@ func showBothSelects(state map[string]string) executor.ExecuteOutput {
 }
 
 // Helper function to check if all selections are made
-func allSelectionsMade(state map[string]string, options []Option) bool {
+func allSelectionsMade(state map[string]string, options []Arg) bool {
 	for _, option := range options {
-		if option.Flags[0] == "-h" {
-			continue
-		}
-		if state[fmt.Sprintf("%s-%s", state["first"], option.Flags[0])] == "" {
+		if state[fmt.Sprintf("%s-%s", state["first"], option.Flag)] == "" {
 			return false
 		}
 	}
@@ -422,7 +393,7 @@ func allSelectionsMade(state map[string]string, options []Option) bool {
 }
 
 // Helper function to build the final command based on all selections
-func buildFinalCommand(state map[string]string, options []Option) string {
+func buildFinalCommand(state map[string]string, options []Arg) string {
 	var commandParts []string
 
 	// Add the first selection (e.g., job name)
@@ -433,7 +404,7 @@ func buildFinalCommand(state map[string]string, options []Option) string {
 	// Add options in the same order as they appear in the script output
 	for _, option := range options {
 		// Construct the key as used in the state map
-		flagKey := fmt.Sprintf("%s-%s", state["first"], option.Flags[0])
+		flagKey := fmt.Sprintf("%s-%s", state["first"], option.Flag)
 		if value, ok := state[flagKey]; ok && value != "" {
 			commandParts = append(commandParts, value)
 		}
