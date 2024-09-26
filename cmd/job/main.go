@@ -128,6 +128,42 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 		e.state[sessionID][flag] = strings.TrimPrefix(value, flag+" ")
 		return showBothSelects(ctx, envs, e.state[sessionID]), nil
 
+	case "run":
+		fields := strings.Fields(value)
+		args := fields[2:]
+		runCmd := fmt.Sprintf("kubectl get cronjob %s -n %s -ojson", fields[0], fields[1])
+		out, _ := plugin.ExecuteCommand(ctx, runCmd, plugin.ExecuteCommandEnvs(envs))
+		var cronJobJson map[string]interface{}
+		json.Unmarshal([]byte(out.Stdout), &cronJobJson)
+		cronJobJson["spec"].(map[string]interface{})["template"].(map[string]interface{})["spec"].(map[string]interface{})["containers"].([]interface{})[0].(map[string]interface{})["args"] = args
+	// Prepare the patch JSON
+		patchJson := map[string]interface{}{
+			"spec": map[string]interface{}{
+				"template": map[string]interface{}{
+					"spec": map[string]interface{}{
+						"containers": []interface{}{
+							map[string]interface{}{
+								"args": args,
+							},
+						},
+					},
+				},
+			},
+		}
+		// Marshal the patched JSON to a byte slice
+		patchData, err := json.MarshalIndent(patchJson, "", "  ") // Use json.MarshalIndent for pretty printing
+		if err != nil {
+			log.Fatalf("error marshalling patch JSON: %w", err)
+		}
+
+		// Save the patched JSON to a file
+		err = os.WriteFile("patched_cronjob.json", patchData, 0644) // Create or overwrite the file
+		if err != nil {
+			log.Fatalf("error writing patched JSON to file: %w", err)
+		}
+		return executor.ExecuteOutput{
+			Message: api.NewCodeBlockMessage("saved", true),
+		}, nil
 	}
 
 	if strings.TrimSpace(in.Command) == pluginName {
@@ -270,10 +306,12 @@ func showBothSelects(ctx context.Context, envs map[string]string, state map[stri
 			Selects: selects,
 		},
 	}
+	var namespace string
 	var jobArgs []Arg
 	// Create multiple dropdowns based on the options in the script output
 	for _, job := range jobs {
 		if job.Name == state["first"] {
+			namespace = job.Namespace
 			jobArgs = job.Args
 			for _, option := range job.Args {
 				// Construct the flag key for the state
@@ -338,7 +376,7 @@ func showBothSelects(ctx context.Context, envs map[string]string, state map[stri
 
 	// If all selections are made, show the run button
 	if allSelectionsMade(state, jobArgs) {
-		code := buildFinalCommand(state, jobArgs)
+		code := buildFinalCommand(state, jobArgs, namespace)
 		sections = append(sections, api.Section{
 			Base: api.Base{
 				Body: api.Body{
@@ -374,12 +412,13 @@ func allSelectionsMade(state map[string]string, options []Arg) bool {
 }
 
 // Helper function to build the final command based on all selections
-func buildFinalCommand(state map[string]string, options []Arg) string {
+func buildFinalCommand(state map[string]string, options []Arg, namespace string) string {
 	var commandParts []string
 
 	// Add the first selection (e.g., job name)
 	if first, ok := state["first"]; ok {
 		commandParts = append(commandParts, first)
+		commandParts = append(commandParts, namespace)
 	}
 
 	// Add options in the same order as they appear in the script output
