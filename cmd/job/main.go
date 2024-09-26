@@ -131,7 +131,7 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 	case "run":
 		fields := strings.Fields(value)
 		args := fields[2:]
-		runCmd := fmt.Sprintf("kubectl get cronjob %s -n %s -ojson", fields[0], fields[1])
+		runCmd := fmt.Sprintf("kubectl create job from cronjob/%s -n %s --dry-run=client -ojson", fields[0], fields[1])
 		out, _ := plugin.ExecuteCommand(ctx, runCmd, plugin.ExecuteCommandEnvs(envs))
 		var cronJob map[string]interface{}
 		err := json.Unmarshal([]byte(out.Stdout), &cronJob)
