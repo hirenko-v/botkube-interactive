@@ -146,8 +146,7 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 		container := template["spec"].(map[string]interface{})["containers"].([]interface{})[0].(map[string]interface{})
 
 		// Modify the first container args
-		newArgs := []interface{}{"-insert_fr", "-new_arg1", "-new_arg2"} // Add your new args here
-		container["args"] = newArgs
+		container["args"] = args
 
 		// Marshal the modified map back to JSON
 		modifiedJSON, err := json.MarshalIndent(cronJob, "", "  ")
@@ -426,7 +425,11 @@ func buildFinalCommand(state map[string]string, options []Arg, namespace string)
 		flagKey := fmt.Sprintf("%s-%s", state["first"], option.Flag)
 		if value, ok := state[flagKey]; ok && value != "" {
 			if option.Type == "bool" {
-				value = strings.Fields(value)[0]
+				if strings.Fields(value)[1] == "true" {
+					value = strings.Fields(value)[0]
+				} else {
+					continue
+				}
 			}
 			commandParts = append(commandParts, value)
 		}
