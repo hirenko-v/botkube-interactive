@@ -159,6 +159,8 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 		if err != nil {
 			log.Fatalf("error writing patched JSON to file: %w", err)
 		}
+		createCmd := fmt.Sprintf("kubectl apply -f /tmp/patched_cronjob.json")
+		plugin.ExecuteCommand(ctx, createCmd, plugin.ExecuteCommandEnvs(envs))
 		return executor.ExecuteOutput{
 			Message: api.NewCodeBlockMessage(fmt.Sprintf("saved, %s",args), true),
 		}, nil
