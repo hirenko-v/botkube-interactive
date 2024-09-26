@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/go-plugin"
 	"github.com/kubeshop/botkube/pkg/api"
@@ -204,7 +205,7 @@ func (SnippetExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exe
 	}
 
 	fileSize := len(contentStr)
-	filename := fmt.Sprintf("YOUR_JOB_NAME-%d.log", 123456789) // Replace with job name and epoch
+	filename := fmt.Sprintf("%s.log", time.Now().Unix())
 
 	// Step 2: Get the upload URL
 	uploadURL, fileID, err := getUploadURL(botToken, filename, fileSize)
@@ -227,7 +228,7 @@ func (SnippetExecutor) Execute(_ context.Context, in executor.ExecuteInput) (exe
 	// fmt.Printf("%s has been successfully executed\n", command)
 
 	return executor.ExecuteOutput{
-		Message: api.NewCodeBlockMessage("Attachment sent, please check", false),
+		Message: api.NewCodeBlockMessage(fmt.Sprintf("Command `%s` resoult sent, please check attachement the following name: `%s`", value, filename), false),
 	}, nil
 }
 
