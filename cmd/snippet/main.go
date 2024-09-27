@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -193,6 +194,17 @@ func (SnippetExecutor) Metadata(context.Context) (api.MetadataOutput, error) {
 func (SnippetExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (executor.ExecuteOutput, error) {
 
 	_, value := parseCommand(in.Command)
+	var cmd, msg, message string
+	// Define flags and associate them with the variables
+	flag.StringVar(&value, "c", "", "Command value")
+	flag.StringVar(&value, "m", "", "Message value")
+
+	// Parse the flags
+	flag.Parse()
+
+	// Output the values
+	fmt.Printf("Command: %s\n", cmd)
+	fmt.Printf("Message: %s\n", msg)
 
     // Load the YAML file
     data, err := ioutil.ReadFile("/config/comm_config.yaml")
@@ -215,7 +227,7 @@ func (SnippetExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (e
 
 	// Step 1: Execute the command
 	content := ""
-	if strings.HasPrefix(value, "kubectl") {
+	if strings.HasPrefix(cmd, "kubectl") {
 		// Kubernetes client setup
 		kubeConfigPath, deleteFn, err := plugin.PersistKubeConfig(ctx, in.Context.KubeConfig)
 		if err != nil {
@@ -230,10 +242,10 @@ func (SnippetExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (e
 			"KUBECONFIG": kubeConfigPath,
 		}
 
-		out, err := plugin.ExecuteCommand(ctx, value, plugin.ExecuteCommandEnvs(envs))
+		out, err := plugin.ExecuteCommand(ctx, cmd, plugin.ExecuteCommandEnvs(envs))
 		content = out.Stdout
 	} else {
-		out, err := exec.Command("sh", "-c", value).Output()
+		out, err := exec.Command("sh", "-c", cmd).Output()
 		if err != nil {
 			return executor.ExecuteOutput{}, errors.New(fmt.Sprintf("Failed to run command, %s", err))
 		}
@@ -261,10 +273,15 @@ func (SnippetExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (e
 		return executor.ExecuteOutput{}, err
 	}
 
-	// fmt.Printf("%s has been successfully executed\n", command)
+	// fmt.Printf("%s has been successfully executed\n", command) 
+	if msg != "" {
+		message = fmt.Sprintf("%s please check attachement with the following name: %s", msg, filename)
+	} else {
+		message = fmt.Sprintf("Command %s result sent, please check attachement with the following name: %s", cmd, filename)
+	}
 
 	return executor.ExecuteOutput{
-		Message: api.NewCodeBlockMessage(fmt.Sprintf("Command %s result sent, please check attachement the following name: %s", value, filename), false),
+		Message: api.NewCodeBlockMessage(fmt.Sprintf("Command %s result sent, please check attachement with the following name: %s", cmd, filename), false),
 	}, nil
 }
 
