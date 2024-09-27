@@ -169,7 +169,7 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 		createCmd := fmt.Sprintf("kubectl apply -f %s", filePath)
 		plugin.ExecuteCommand(ctx, createCmd, plugin.ExecuteCommandEnvs(envs))
 		return executor.ExecuteOutput{
-			Message: api.NewCodeBlockMessage(fmt.Sprintf("saved, %s",args), true),
+			Message: api.NewCodeBlockMessage(fmt.Sprintf("Job, %s started",jobName), true),
 		}, nil
 	}
 
