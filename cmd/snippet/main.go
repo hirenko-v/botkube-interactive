@@ -188,6 +188,7 @@ func (SnippetExecutor) Metadata(context.Context) (api.MetadataOutput, error) {
 	}, nil
 }
 
+
 // Execute returns a given command as a response.
 //
 //nolint:gocritic  //hugeParam: in is heavy (80 bytes); consider passing it by pointer
@@ -195,12 +196,15 @@ func (SnippetExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (e
 
 	_, value := parseCommand(in.Command)
 	var cmd, msg, message string
+	fs := flag.NewFlagSet("CommandParser", flag.ContinueOnError)
 	// Define flags and associate them with the variables
-	flag.StringVar(&value, "c", "", "Command value")
-	flag.StringVar(&value, "m", "", "Message value")
+	fs.StringVar(&cmd, "c", "", "Command value")
+	fs.StringVar(&msg, "m", "", "Message value")
 
-	// Parse the flags
-	flag.Parse()
+	err := fs.Parse(strings.Split(value, " "))
+	if err != nil {
+		fmt.Println("Error parsing flags:", err)
+	}
 
 	// Output the values
 	fmt.Printf("Command: %s\n", cmd)
