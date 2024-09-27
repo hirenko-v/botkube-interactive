@@ -78,30 +78,7 @@ func (MsgExecutor) Metadata(context.Context) (api.MetadataOutput, error) {
 
 // Execute returns a given command as a response.
 func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (executor.ExecuteOutput, error) {
-
-	// Kubernetes client setup
-	kubeConfigPath, deleteFn, err := plugin.PersistKubeConfig(ctx, in.Context.KubeConfig)
-	if err != nil {
-		log.Fatalf("Error writing kubeconfig file: %v", err)
-	}
-	defer func() {
-		if deleteErr := deleteFn(ctx); deleteErr != nil {
-			fmt.Fprintf(os.Stderr, "failed to delete kubeconfig file %s: %v", kubeConfigPath, deleteErr)
-		}
-	}()
-	envs := map[string]string{
-		"KUBECONFIG": kubeConfigPath,
-	}
-	if err != nil {
-		log.Fatalf("Error creating Kubernetes client: %v", err)
-	}
-
-	if !in.Context.IsInteractivitySupported {
-		return executor.ExecuteOutput{
-			Message: api.NewCodeBlockMessage("Interactivity for this platform is not supported", true),
-		}, nil
-	}
-
+	envs := getKubeconfigEnvs(ctx, in.Context.KubeConfig)
 	// Parse the action and value from the command
 	action, value := parseCommand(in.Command)
 
@@ -111,6 +88,8 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 	if _, ok := e.state[sessionID]; !ok {
 		e.state[sessionID] = make(map[string]string)
 	}
+
+	jobs := getBotkubeJobs(ctx, envs)
 
 	switch action {
 	case "select_first":
@@ -122,13 +101,13 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 
 		// Store the selection from the first dropdown
 		e.state[sessionID]["first"] = value
-		return showBothSelects(ctx, envs, e.state[sessionID]), nil
+		return showBothSelects(jobs, e.state[sessionID]), nil
 
 	case "select_dynamic":
 		// Store dynamic dropdown selections (flag is passed in the command)
 		flag := strings.Fields(value)[0]
 		e.state[sessionID][flag] = strings.TrimPrefix(value, flag+" ")
-		return showBothSelects(ctx, envs, e.state[sessionID]), nil
+		return showBothSelects(jobs, e.state[sessionID]), nil
 
 	case "run":
 		fields := strings.Fields(value)
@@ -170,7 +149,7 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 	}
 
 	if strings.TrimSpace(in.Command) == pluginName {
-		return initialMessages(ctx, envs), nil
+		return initialMessages(jobs), nil
 	}
 
 	msg := fmt.Sprintf("Plain command: %s", in.Command)
@@ -227,6 +206,24 @@ type Job struct {
 	Args      []Arg  `json:"args"`
 }
 
+func getKubeconfigEnvs(ctx context.Context, kubeconfig []byte) map[string]string {
+	// Kubernetes client setup
+	kubeConfigPath, deleteFn, err := plugin.PersistKubeConfig(ctx, kubeconfig)
+	if err != nil {
+		log.Fatalf("Error writing kubeconfig file: %v", err)
+	}
+	defer func() {
+		if deleteErr := deleteFn(ctx); deleteErr != nil {
+			fmt.Fprintf(os.Stderr, "failed to delete kubeconfig file %s: %v", kubeConfigPath, deleteErr)
+		}
+	}()
+	envs := map[string]string{
+		"KUBECONFIG": kubeConfigPath,
+	}
+
+	return envs
+}
+
 func getBotkubeJobs(ctx context.Context, envs map[string]string) ([]Job) {
 	var jobList []Job
 
@@ -249,10 +246,9 @@ func getBotkubeJobs(ctx context.Context, envs map[string]string) ([]Job) {
 	return jobList
 }
 
-func initialMessages(ctx context.Context, envs map[string]string) executor.ExecuteOutput {
+func initialMessages(jobs []Job) executor.ExecuteOutput {
 
 	var jobList []api.OptionItem
-	jobs := getBotkubeJobs(ctx, envs)
 	for _, job := range jobs {
 		jobList = append(jobList, api.OptionItem{
 			Name:  job.Name,
@@ -283,9 +279,8 @@ func initialMessages(ctx context.Context, envs map[string]string) executor.Execu
 }
 
 // showBothSelects dynamically generates dropdowns based on the selected options.
-func showBothSelects(ctx context.Context, envs map[string]string, state map[string]string) executor.ExecuteOutput {
+func showBothSelects(jobs []Job, state map[string]string) executor.ExecuteOutput {
 	var jobList []api.OptionItem
-	jobs := getBotkubeJobs(ctx, envs)
 	for _, job := range jobs {
 		jobList = append(jobList, api.OptionItem{
 			Name:  job.Name,
