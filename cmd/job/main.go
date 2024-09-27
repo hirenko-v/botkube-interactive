@@ -132,19 +132,22 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 
 	case "run":
 		fields := strings.Fields(value)
+		args := fields[2:]
 		jobName := fmt.Sprintf("%s-%s",fields[0], strconv.FormatInt(time.Now().Unix(), 10))
 		filePath := fmt.Sprintf("/tmp/%s.json",jobName)
-
-		args := fields[2:]
-		runCmd := fmt.Sprintf("kubectl create job --from=cronjob/%s -n %s &s --dry-run -ojson", fields[0], fields[1], jobName)
+		runCmd := fmt.Sprintf("kubectl create job --from=cronjob/%s -n %s test --dry-run -ojson", fields[0], fields[1])
 		out, _ := plugin.ExecuteCommand(ctx, runCmd, plugin.ExecuteCommandEnvs(envs))
+		err = os.WriteFile("/tmp/stdout.json", []byte(out.Stdout), 0644) // Create or overwrite the file
+		if err != nil {
+			log.Fatalf("error writing patched JSON to file: %w", err)
+		}
 		var cronJob map[string]interface{}
 		err := json.Unmarshal([]byte(out.Stdout), &cronJob)
 		if err != nil {
 			fmt.Println("Error unmarshalling JSON:", err)
 		}
-		// annotations := cronJob["metadata"].(map[string]interface{})["annotations"].(map[string]interface{})
-		// annotations["botkube"] = "true" 
+		annotations := cronJob["metadata"].(map[string]interface{})["annotations"].(map[string]interface{})
+		annotations["botkube"] = "true" 
 		// Navigate to the container args
 		template := cronJob["spec"].(map[string]interface{})["template"].(map[string]interface{})
 		container := template["spec"].(map[string]interface{})["containers"].([]interface{})[0].(map[string]interface{})
@@ -166,7 +169,7 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 		createCmd := fmt.Sprintf("kubectl apply -f %s", filePath)
 		plugin.ExecuteCommand(ctx, createCmd, plugin.ExecuteCommandEnvs(envs))
 		return executor.ExecuteOutput{
-			Message: api.NewCodeBlockMessage(fmt.Sprintf("Job %s started", jobName), true),
+			Message: api.NewCodeBlockMessage(fmt.Sprintf("saved, %s",args), true),
 		}, nil
 	}
 
