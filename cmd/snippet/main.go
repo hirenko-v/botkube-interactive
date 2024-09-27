@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -205,34 +204,15 @@ func (SnippetExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (e
 	}
 
 	// Step 1: Execute the command
-	content := ""
-	if strings.HasPrefix(cmd, "kubectl") {
-		// Kubernetes client setup
-		kubeConfigPath, deleteFn, err := plugin.PersistKubeConfig(ctx, in.Context.KubeConfig)
-		if err != nil {
-			log.Fatalf("Error writing kubeconfig file: %v", err)
-		}
-		defer func() {
-			if deleteErr := deleteFn(ctx); deleteErr != nil {
-				fmt.Fprintf(os.Stderr, "failed to delete kubeconfig file %s: %v", kubeConfigPath, deleteErr)
-			}
-		}()
-		envs := map[string]string{
-			"KUBECONFIG": kubeConfigPath,
-		}
-
-		out, err := plugin.ExecuteCommand(ctx, cmd, plugin.ExecuteCommandEnvs(envs))
-		content = out.Stdout
-	} else {
-		out, err := exec.Command("sh", "-c", cmd).Output()
-		if err != nil {
-			return executor.ExecuteOutput{}, errors.New(fmt.Sprintf("Failed to run command %s, %s",cmd, err))
-		}
-		content = string(out)
+	content, err := executeCommand(ctx, cmd, in.Context.KubeConfig)
+	if err != nil {
+		return executor.ExecuteOutput{}, err
 	}
-	if content == "" { content = "empty output" }
+	if content == "" {
+		content = "empty output"
+	}
 	fileSize := len(content)
-	filename := fmt.Sprintf("%s.log",  strconv.FormatInt(time.Now().Unix(), 10))
+	filename := fmt.Sprintf("%s.log", strconv.FormatInt(time.Now().Unix(), 10))
 
 	// Step 2: Get the upload URL
 	uploadURL, fileID, err := getUploadURL(botToken, filename, fileSize)
@@ -252,7 +232,6 @@ func (SnippetExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (e
 	} else {
 		message = fmt.Sprintf("Command %s result sent, please check attachement with the following name: %s", cmd, filename)
 	}
-
 
 		// Step 4: Complete the upload and post the message
 		err = completeUpload(botToken, fileID, channelID, message)
@@ -358,6 +337,31 @@ func parseCmdAndMsg(command string) (string, string, error) {
 	return msg, cmd, nil
 }
 
+func executeCommand(ctx context.Context, cmd string, kubeConfig []byte) (string, error) {
+	if strings.HasPrefix(cmd, "kubectl") {
+		kubeConfigPath, deleteFn, err := plugin.PersistKubeConfig(ctx, kubeConfig)
+		if err != nil {
+			return "", fmt.Errorf("error writing kubeconfig file: %v", err)
+		}
+		defer func() {
+			if deleteErr := deleteFn(ctx); deleteErr != nil {
+				fmt.Fprintf(os.Stderr, "failed to delete kubeconfig file %s: %v", kubeConfigPath, deleteErr)
+			}
+		}()
+		envs := map[string]string{
+			"KUBECONFIG": kubeConfigPath,
+		}
+
+		out, err := plugin.ExecuteCommand(ctx, cmd, plugin.ExecuteCommandEnvs(envs))
+		return out.Stdout, err
+	}
+
+	out, err := exec.Command("sh", "-c", cmd).Output()
+	if err != nil {
+		return "", fmt.Errorf("failed to run command %s: %v", cmd, err)
+	}
+	return string(out), nil
+}
 
 func main() {
 	executor.Serve(map[string]go_plugin.Plugin{
