@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -197,12 +196,19 @@ func (SnippetExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (e
 	_, value := parseCommand(in.Command)
 	var cmd, msg, message string
     re := regexp.MustCompile(`(-\w)\s+['"]([^'"]*)['"]|(-\w)\s+(\S+)`)
+	cre := regexp.MustCompile(`-c (.+)`)
+	mFlagFound := false
 
     // Find all matches in the input string
 	matches := re.FindAllStringSubmatch(value, -1)
-
+    cFlagAll := cre.FindStringSubmatch(value)[1]
 	// Iterate over the matches and assign flag values
+	
 	for _, match := range matches {
+		if mFlagFound {
+			cmd = cFlagAll
+			continue
+		}
 		if match[1] == "-c" {
 			cmd = match[2] // Capture quoted value (single or double quotes)
 		} else if match[3] == "-c" {
@@ -211,13 +217,15 @@ func (SnippetExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (e
 
 		if match[1] == "-m" {
 			msg = match[2]
+			mFlagFound = true
 		} else if match[3] == "-m" {
 			msg = match[4]
+			mFlagFound = true
 		}
 	}
 
     // Load the YAML file
-    data, err := ioutil.ReadFile("/config/comm_config.yaml")
+    data, err := os.ReadFile("/config/comm_config.yaml")
     if err != nil {
         log.Fatalf("Error reading YAML file: %v", err)
     }
