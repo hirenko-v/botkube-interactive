@@ -196,7 +196,7 @@ func (SnippetExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (e
 
 	_, value := parseCommand(in.Command)
 	var cmd, msg, message string
-    re := regexp.MustCompile(`(-\w)\s+'([^']*)'|(-\w)\s+(\S+)`)
+    re := regexp.MustCompile(`(-\w)\s+['"]([^'"]*)['"]|(-\w)\s+(\S+)`)
 
     // Find all matches in the input string
     matches := re.FindAllStringSubmatch(value, -1)
