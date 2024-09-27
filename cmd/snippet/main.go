@@ -199,22 +199,22 @@ func (SnippetExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (e
     re := regexp.MustCompile(`(-\w)\s+['"]([^'"]*)['"]|(-\w)\s+(\S+)`)
 
     // Find all matches in the input string
-    matches := re.FindAllStringSubmatch(value, -1)
+	matches := re.FindAllStringSubmatch(value, -1)
 
-    // Iterate over the matches and assign flag values
-    for _, match := range matches {
-        if match[1] == "-c" {
-            cmd = match[2] // Capture quoted value
-        } else if match[3] == "-c" {
-            cmd = match[4] // Capture unquoted value
-        }
+	// Iterate over the matches and assign flag values
+	for _, match := range matches {
+		if match[1] == "-c" {
+			cmd = match[2] // Capture quoted value (single or double quotes)
+		} else if match[3] == "-c" {
+			cmd = match[4] // Capture unquoted value
+		}
 
-        if match[1] == "-m" {
-            msg = match[2]
-        } else if match[3] == "-m" {
-            msg = match[4]
-        }
-    }
+		if match[1] == "-m" {
+			msg = match[2]
+		} else if match[3] == "-m" {
+			msg = match[4]
+		}
+	}
 
     // Load the YAML file
     data, err := ioutil.ReadFile("/config/comm_config.yaml")
@@ -291,7 +291,7 @@ func (SnippetExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (e
 	}
 
 	return executor.ExecuteOutput{
-		Message: api.NewCodeBlockMessage(fmt.Sprintf("Command %s result sent, please check attachement with the following name: %s", cmd, filename), false),
+		Message: api.NewCodeBlockMessage(message, false),
 	}, nil
 }
 
