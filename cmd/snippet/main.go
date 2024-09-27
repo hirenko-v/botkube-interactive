@@ -257,7 +257,7 @@ func (SnippetExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (e
 	} else {
 		out, err := exec.Command("sh", "-c", cmd).Output()
 		if err != nil {
-			return executor.ExecuteOutput{}, errors.New(fmt.Sprintf("Failed to run command, %s", err))
+			return executor.ExecuteOutput{}, errors.New(fmt.Sprintf("Failed to run command %s, %s",cmd, err))
 		}
 		content = string(out)
 	}
