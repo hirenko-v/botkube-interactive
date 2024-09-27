@@ -206,7 +206,7 @@ func (SnippetExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (e
 	
 	for _, match := range matches {
 		if mFlagFound {
-			cmd = cFlagAll
+			cmd = strings.Trim(cFlagAll, `"'`)
 			continue
 		}
 		if match[1] == "-c" {
