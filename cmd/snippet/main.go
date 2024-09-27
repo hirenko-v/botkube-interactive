@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -14,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -196,19 +196,25 @@ func (SnippetExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (e
 
 	_, value := parseCommand(in.Command)
 	var cmd, msg, message string
-	fs := flag.NewFlagSet("CommandParser", flag.ContinueOnError)
-	// Define flags and associate them with the variables
-	fs.StringVar(&cmd, "c", "", "Command value")
-	fs.StringVar(&msg, "m", "", "Message value")
+    re := regexp.MustCompile(`(-\w)\s+'([^']*)'|(-\w)\s+(\S+)`)
 
-	err := fs.Parse(strings.Split(value, " "))
-	if err != nil {
-		fmt.Println("Error parsing flags:", err)
-	}
+    // Find all matches in the input string
+    matches := re.FindAllStringSubmatch(value, -1)
 
-	// Output the values
-	fmt.Printf("Command: %s\n", cmd)
-	fmt.Printf("Message: %s\n", msg)
+    // Iterate over the matches and assign flag values
+    for _, match := range matches {
+        if match[1] == "-c" {
+            cmd = match[2] // Capture quoted value
+        } else if match[3] == "-c" {
+            cmd = match[4] // Capture unquoted value
+        }
+
+        if match[1] == "-m" {
+            msg = match[2]
+        } else if match[3] == "-m" {
+            msg = match[4]
+        }
+    }
 
     // Load the YAML file
     data, err := ioutil.ReadFile("/config/comm_config.yaml")
