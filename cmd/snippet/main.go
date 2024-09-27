@@ -277,12 +277,6 @@ func (SnippetExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (e
 		return executor.ExecuteOutput{}, err
 	}
 
-	// Step 4: Complete the upload and post the message
-	err = completeUpload(botToken, fileID, channelID, message)
-	if err != nil {
-		return executor.ExecuteOutput{}, err
-	}
-
 	// fmt.Printf("%s has been successfully executed\n", command) 
 	if msg != "" {
 		message = fmt.Sprintf("%s please check attachement with the following name: %s", msg, filename)
@@ -290,8 +284,15 @@ func (SnippetExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (e
 		message = fmt.Sprintf("Command %s result sent, please check attachement with the following name: %s", cmd, filename)
 	}
 
+
+		// Step 4: Complete the upload and post the message
+		err = completeUpload(botToken, fileID, channelID, message)
+		if err != nil {
+			return executor.ExecuteOutput{}, err
+		}
+
 	return executor.ExecuteOutput{
-		Message: api.NewCodeBlockMessage(message, false),
+		Message: api.NewCodeBlockMessage(fmt.Sprintf("Command %s result sent, please check attachement with the following name: %s", cmd, filename), false),
 	}, nil
 }
 
