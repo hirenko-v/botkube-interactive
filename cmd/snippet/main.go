@@ -254,7 +254,7 @@ func (SnippetExecutor) Help(context.Context) (api.Message, error) {
 					Description: description,
 				},
 				Buttons: []api.Button{
-					btnBuilder.ForCommandWithDescCmd("Run", "snippet 'hello world'"),
+					btnBuilder.ForCommandWithDescCmd("Run", "snippet -c echo 'hello world'"),
 				},
 			},
 		},
