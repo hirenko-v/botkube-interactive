@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -23,22 +24,20 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// Config defines the structure of the configuration YAML file.
+// Define the structure of your YAML file
 type Config struct {
-	Communications struct {
-		DefaultGroup struct {
-			SocketSlack struct {
-				BotToken string `yaml:"botToken"`
-			} `yaml:"socketSlack"`
-		} `yaml:"default-group"`
-	} `yaml:"communications"`
+    Communications struct {
+        DefaultGroup struct {
+            SocketSlack struct {
+                BotToken string `yaml:"botToken"`
+            } `yaml:"socketSlack"`
+        } `yaml:"default-group"`
+    } `yaml:"communications"`
 }
 
 const (
-	channelID      = "C07MUPT2QRE"
-	kubectlVersion = "v1.28.1"
-	description    = "snippet"
-	version        = "dev"
+	channelID = "C07MUPT2QRE"
+	message   = "Output:"
 )
 
 type UploadURLResponse struct {
@@ -47,35 +46,22 @@ type UploadURLResponse struct {
 }
 
 type CompleteUploadPayload struct {
-	Files          []FileInfo `json:"files"`
-	ChannelID      string     `json:"channel_id"`
-	InitialComment string     `json:"initial_comment"`
+	Files         []FileInfo `json:"files"`
+	ChannelID     string     `json:"channel_id"`
+	InitialComment string    `json:"initial_comment"`
 }
 
 type FileInfo struct {
 	ID string `json:"id"`
 }
 
+const description = "snippet"
+
+// version is set via ldflags by GoReleaser.
+var version = "dev"
+
 // SnippetExecutor implements the Botkube executor plugin interface.
 type SnippetExecutor struct{}
-
-func getBotToken() (string, error) {
-	data, err := os.ReadFile("/config/comm_config.yaml")
-	if err != nil {
-		return "", fmt.Errorf("error reading YAML file: %v", err)
-	}
-
-	var config Config
-	if err := yaml.Unmarshal(data, &config); err != nil {
-		return "", fmt.Errorf("error parsing YAML file: %v", err)
-	}
-
-	botToken := config.Communications.DefaultGroup.SocketSlack.BotToken
-	if botToken == "" {
-		return "", errors.New("bot token not found in configuration")
-	}
-	return botToken, nil
-}
 
 func getUploadURL(token, filename string, fileSize int) (string, string, error) {
 	url := "https://slack.com/api/files.getUploadURLExternal"
@@ -91,11 +77,12 @@ func getUploadURL(token, filename string, fileSize int) (string, string, error) 
 	}
 
 	var result UploadURLResponse
-	if err := json.Unmarshal(resp, &result); err != nil {
+	err = json.Unmarshal(resp, &result)
+	if err != nil {
 		return "", "", fmt.Errorf("failed to parse response: %v", err)
 	}
 
-	if result.UploadURL == "" {
+	if result.UploadURL == "null" {
 		return "", "", fmt.Errorf("error getting upload URL: %s", string(resp))
 	}
 
@@ -127,8 +114,8 @@ func uploadFile(uploadURL, content string) error {
 func completeUpload(token, fileID, channelID, message string) error {
 	url := "https://slack.com/api/files.completeUploadExternal"
 	payload := CompleteUploadPayload{
-		Files:          []FileInfo{{ID: fileID}},
-		ChannelID:      channelID,
+		Files:         []FileInfo{{ID: fileID}},
+		ChannelID:     channelID,
 		InitialComment: message,
 	}
 
@@ -160,19 +147,24 @@ func completeUpload(token, fileID, channelID, message string) error {
 }
 
 func postForm(urlString string, data map[string]string) ([]byte, error) {
-	form := url.Values{}
-	for key, value := range data {
-		form.Add(key, value)
-	}
+    form := url.Values{}
+    for key, value := range data {
+        form.Add(key, value)
+    }
 
-	resp, err := http.PostForm(urlString, form)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
+    resp, err := http.PostForm(urlString, form)
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
 
-	return io.ReadAll(resp.Body)
+    return io.ReadAll(resp.Body)
 }
+
+
+const (
+	kubectlVersion   = "v1.28.1"
+)
 
 func (SnippetExecutor) Metadata(context.Context) (api.MetadataOutput, error) {
 	return api.MetadataOutput{
@@ -183,11 +175,93 @@ func (SnippetExecutor) Metadata(context.Context) (api.MetadataOutput, error) {
 					"darwin/amd64":  fmt.Sprintf("https://dl.k8s.io/release/%s/bin/darwin/amd64/kubectl", kubectlVersion),
 					"darwin/arm64":  fmt.Sprintf("https://dl.k8s.io/release/%s/bin/darwin/arm64/kubectl", kubectlVersion),
 					"linux/amd64":   fmt.Sprintf("https://dl.k8s.io/release/%s/bin/linux/amd64/kubectl", kubectlVersion),
+					"linux/s390x":   fmt.Sprintf("https://dl.k8s.io/release/%s/bin/linux/s390x/kubectl", kubectlVersion),
+					"linux/ppc64le": fmt.Sprintf("https://dl.k8s.io/release/%s/bin/linux/ppc64le/kubectl", kubectlVersion),
+					"linux/arm64":   fmt.Sprintf("https://dl.k8s.io/release/%s/bin/linux/arm64/kubectl", kubectlVersion),
+					"linux/386":     fmt.Sprintf("https://dl.k8s.io/release/%s/bin/linux/386/kubectl", kubectlVersion),
 				},
 			},
 		},
 		Version:     version,
 		Description: description,
+	}, nil
+}
+
+
+// Execute returns a given command as a response.
+//
+//nolint:gocritic  //hugeParam: in is heavy (80 bytes); consider passing it by pointer
+func (SnippetExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (executor.ExecuteOutput, error) {
+	var cmd, msg, message string
+
+	msg, cmd, err := parseCmdAndMsg(in.Command)
+	if err != nil {
+		return executor.ExecuteOutput{}, err
+	}
+
+	botToken, err := getBotToken()
+	if err != nil {
+		return executor.ExecuteOutput{}, err
+	}
+
+	// Step 1: Execute the command
+	content := ""
+	if strings.HasPrefix(cmd, "kubectl") {
+		// Kubernetes client setup
+		kubeConfigPath, deleteFn, err := plugin.PersistKubeConfig(ctx, in.Context.KubeConfig)
+		if err != nil {
+			log.Fatalf("Error writing kubeconfig file: %v", err)
+		}
+		defer func() {
+			if deleteErr := deleteFn(ctx); deleteErr != nil {
+				fmt.Fprintf(os.Stderr, "failed to delete kubeconfig file %s: %v", kubeConfigPath, deleteErr)
+			}
+		}()
+		envs := map[string]string{
+			"KUBECONFIG": kubeConfigPath,
+		}
+
+		out, err := plugin.ExecuteCommand(ctx, cmd, plugin.ExecuteCommandEnvs(envs))
+		content = out.Stdout
+	} else {
+		out, err := exec.Command("sh", "-c", cmd).Output()
+		if err != nil {
+			return executor.ExecuteOutput{}, errors.New(fmt.Sprintf("Failed to run command %s, %s",cmd, err))
+		}
+		content = string(out)
+	}
+	if content == "" { content = "empty output" }
+	fileSize := len(content)
+	filename := fmt.Sprintf("%s.log",  strconv.FormatInt(time.Now().Unix(), 10))
+
+	// Step 2: Get the upload URL
+	uploadURL, fileID, err := getUploadURL(botToken, filename, fileSize)
+	if err != nil {
+		return executor.ExecuteOutput{}, err
+	}
+
+	// Step 3: Upload the file
+	err = uploadFile(uploadURL, content)
+	if err != nil {
+		return executor.ExecuteOutput{}, err
+	}
+
+	// fmt.Printf("%s has been successfully executed\n", command) 
+	if msg != "" {
+		message = fmt.Sprintf("%s please check attachement with the following name: %s", msg, filename)
+	} else {
+		message = fmt.Sprintf("Command %s result sent, please check attachement with the following name: %s", cmd, filename)
+	}
+
+
+		// Step 4: Complete the upload and post the message
+		err = completeUpload(botToken, fileID, channelID, message)
+		if err != nil {
+			return executor.ExecuteOutput{}, err
+		}
+
+	return executor.ExecuteOutput{
+		Message: api.NewCodeBlockMessage(fmt.Sprintf("Command %s result sent, please check attachement with the following name: %s", cmd, filename), false),
 	}, nil
 }
 
@@ -208,100 +282,82 @@ func (SnippetExecutor) Help(context.Context) (api.Message, error) {
 	}, nil
 }
 
+func getBotToken() (string, error) {
+	data, err := os.ReadFile("/config/comm_config.yaml")
+	if err != nil {
+		return "", fmt.Errorf("error reading YAML file: %v", err)
+	}
 
-func (SnippetExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (executor.ExecuteOutput, error) {
-	_, value := parseCommand(in.Command)
-	cmd, msg := parseFlags(value)
+	var config Config
+	if err := yaml.Unmarshal(data, &config); err != nil {
+		return "", fmt.Errorf("error parsing YAML file: %v", err)
+	}
+
+	botToken := config.Communications.DefaultGroup.SocketSlack.BotToken
+	if botToken == "" {
+		return "", errors.New("bot token not found in configuration")
+	}
+	return botToken, nil
+}
+
+func parseCommand(cmd string) (action, value string) {
+	parts := strings.Fields(cmd)
+	if len(parts) > 1 {
+		action = parts[0]
+		value = strings.Join(parts[1:], " ")
+	}
+	return
+}
+
+func parseCmdAndMsg(command string) (string, string, error) {
+	_, value := parseCommand(command)
+	var cmd, msg string
+	re := regexp.MustCompile(`(-\w)\s+['"]([^'"]*)['"]|(-\w)\s+(\S+)`)
+	cre := regexp.MustCompile(`-c (.+)`)
+	mFlagFound := false
+
+	// Find all matches in the input string
+	matches := re.FindAllStringSubmatch(value, -1)
+	if len(matches) == 0 {
+		return "", "", fmt.Errorf("no valid flag-value pairs found in command: %s", command)
+	}
+
+	// Extract -c flag command
+	cFlagMatches := cre.FindStringSubmatch(value)
+	if len(cFlagMatches) < 2 {
+		return "", "", fmt.Errorf("missing '-c' flag in command: %s", command)
+	}
+	cFlagAll := cFlagMatches[1]
+
+	// Iterate over the matches and assign flag values
+	for _, match := range matches {
+		if mFlagFound {
+			cmd = strings.Trim(cFlagAll, `"'`)
+			continue
+		}
+
+		if match[1] == "-c" {
+			cmd = match[2] // Capture quoted value (single or double quotes)
+		} else if match[3] == "-c" {
+			cmd = match[4] // Capture unquoted value
+		}
+
+		if match[1] == "-m" {
+			msg = match[2]
+			mFlagFound = true
+		} else if match[3] == "-m" {
+			msg = match[4]
+			mFlagFound = true
+		}
+	}
 
 	if cmd == "" {
-		return executor.ExecuteOutput{}, errors.New("command not provided")
+		return "", "", fmt.Errorf("command not found in '-c' flag")
 	}
 
-	// Load bot token from config
-	botToken, err := getBotToken()
-	if err != nil {
-		return executor.ExecuteOutput{}, err
-	}
-
-	// Step 1: Execute the command
-	content, err := executeCommand(ctx, cmd, in.Context.KubeConfig)
-	if err != nil {
-		return executor.ExecuteOutput{}, err
-	}
-	if content == "" {
-		content = "empty output"
-	}
-	fileSize := len(content)
-	filename := fmt.Sprintf("%s.log", strconv.FormatInt(time.Now().Unix(), 10))
-
-	// Step 2: Get the upload URL
-	uploadURL, fileID, err := getUploadURL(botToken, filename, fileSize)
-	if err != nil {
-		return executor.ExecuteOutput{}, err
-	}
-
-	// Step 3: Upload the file
-	if err := uploadFile(uploadURL, content); err != nil {
-		return executor.ExecuteOutput{}, err
-	}
-
-	// Step 4: Complete the upload and post the message
-	message := createUploadMessage(cmd, filename, msg)
-	if err := completeUpload(botToken, fileID, channelID, message); err != nil {
-		return executor.ExecuteOutput{}, err
-	}
-
-	return executor.ExecuteOutput{
-		Message: api.NewCodeBlockMessage(message, false),
-	}, nil
+	return msg, cmd, nil
 }
 
-func executeCommand(ctx context.Context, cmd string, kubeConfig []byte) (string, error) {
-	if strings.HasPrefix(cmd, "kubectl") {
-		kubeConfigPath, deleteFn, err := plugin.PersistKubeConfig(ctx, kubeConfig)
-		if err != nil {
-			return "", fmt.Errorf("error writing kubeconfig file: %v", err)
-		}
-		defer func() {
-			if deleteErr := deleteFn(ctx); deleteErr != nil {
-				fmt.Fprintf(os.Stderr, "failed to delete kubeconfig file %s: %v", kubeConfigPath, deleteErr)
-			}
-		}()
-		envs := map[string]string{
-			"KUBECONFIG": kubeConfigPath,
-		}
-
-		out, err := plugin.ExecuteCommand(ctx, cmd, plugin.ExecuteCommandEnvs(envs))
-		return out.Stdout, err
-	}
-
-	out, err := exec.Command("sh", "-c", cmd).Output()
-	if err != nil {
-		return "", fmt.Errorf("failed to run command %s: %v", cmd, err)
-	}
-	return string(out), nil
-}
-
-func createUploadMessage(cmd, filename, msg string) string {
-	return fmt.Sprintf("Executed command: %s \n%s: %s", cmd, filename, msg)
-}
-
-func parseCommand(input string) (string, string) {
-	re := regexp.MustCompile(`(?m)^execute (.+)$`)
-	match := re.FindStringSubmatch(input)
-	if len(match) > 1 {
-		return match[0], match[1]
-	}
-	return "", ""
-}
-
-func parseFlags(input string) (string, string) {
-	// Example flag parsing logic
-	if input == "" {
-		return "", ""
-	}
-	return input, "Parsed flags"
-}
 
 func main() {
 	executor.Serve(map[string]go_plugin.Plugin{
