@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	go_plugin "github.com/hashicorp/go-plugin"
 	"github.com/kubeshop/botkube/pkg/api"
@@ -131,7 +133,9 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 	case "run":
 		fields := strings.Fields(value)
 		args := fields[2:]
-		runCmd := fmt.Sprintf("kubectl create job --from=cronjob/%s -n %s test --dry-run -ojson", fields[0], fields[1])
+		jobName := fmt.Sprintf("%s-%s",fields[0], strconv.FormatInt(time.Now().Unix(), 10))
+		// filePath := fmt.Sprintf("/tmp/%s.json",jobName)
+		runCmd := fmt.Sprintf("kubectl create job --from=cronjob/%s -n %s %s --dry-run -ojson", fields[0], fields[1], jobName)
 		out, _ := plugin.ExecuteCommand(ctx, runCmd, plugin.ExecuteCommandEnvs(envs))
 		err = os.WriteFile("/tmp/stdout.json", []byte(out.Stdout), 0644) // Create or overwrite the file
 		if err != nil {
@@ -165,7 +169,7 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 		createCmd := fmt.Sprintf("kubectl apply -f /tmp/patched_cronjob.json")
 		plugin.ExecuteCommand(ctx, createCmd, plugin.ExecuteCommandEnvs(envs))
 		return executor.ExecuteOutput{
-			Message: api.NewCodeBlockMessage(fmt.Sprintf("saved, %s",args), true),
+			Message: api.NewCodeBlockMessage(fmt.Sprintf("Job %s is started",jobName), true),
 		}, nil
 	}
 
