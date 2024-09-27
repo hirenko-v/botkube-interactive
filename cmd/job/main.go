@@ -135,7 +135,7 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 		args := fields[2:]
 		jobName := fmt.Sprintf("%s-%s",fields[0], strconv.FormatInt(time.Now().Unix(), 10))
 		filePath := fmt.Sprintf("/tmp/%s.json",jobName)
-		runCmd := fmt.Sprintf("kubectl create job --from=cronjob/%s -n %s test --dry-run -ojson", fields[0], fields[1])
+		runCmd := fmt.Sprintf("kubectl create job --from=cronjob/%s -n %s %s --dry-run -ojson", fields[0], fields[1], jobName)
 		out, _ := plugin.ExecuteCommand(ctx, runCmd, plugin.ExecuteCommandEnvs(envs))
 		err = os.WriteFile("/tmp/stdout.json", []byte(out.Stdout), 0644) // Create or overwrite the file
 		if err != nil {
