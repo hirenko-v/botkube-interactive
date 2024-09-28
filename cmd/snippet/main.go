@@ -37,6 +37,7 @@ type Config struct {
 const (
 	channelID = "C07MUPT2QRE"
 	message   = "Output:"
+	configPath = "/config/comm_config.yaml"
 )
 
 type UploadURLResponse struct {
@@ -262,7 +263,7 @@ func (SnippetExecutor) Help(context.Context) (api.Message, error) {
 }
 
 func getBotToken() (string, error) {
-	data, err := os.ReadFile("/config/comm_config.yaml")
+	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return "", fmt.Errorf("error reading YAML file: %v", err)
 	}

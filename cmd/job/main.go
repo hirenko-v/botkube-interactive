@@ -19,6 +19,8 @@ import (
 const (
 	description = "Run Job."
 	pluginName  = "job"
+	kubectlVersion   = "v1.28.1"
+
 )
 
 // version is set via ldflags by GoReleaser.
@@ -50,9 +52,19 @@ type CronJobsList struct {
     Items []CronJobs `json:"items"`
 }
 
-const (
-	kubectlVersion   = "v1.28.1"
-)
+type Arg struct {
+	Flag        string `json:"flag"`
+	Description string `json:"description"`
+	Type        string `json:"type"`
+	Default     string `json:"default"`
+	Values      []string `json:"values,omitempty"`
+}
+
+type Job struct {
+	Name      string `json:"name"`
+	Namespace string `json:"namespace"`
+	Args      []Arg  `json:"args"`
+}
 
 // Metadata returns details about the Msg plugin.
 func (MsgExecutor) Metadata(context.Context) (api.MetadataOutput, error) {
@@ -116,6 +128,7 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 		filePath := fmt.Sprintf("/tmp/%s.json",jobName)
 		runCmd := fmt.Sprintf("kubectl create job --from=cronjob/%s -n %s %s --dry-run -ojson", fields[0], fields[1], jobName)
 		out, _ := plugin.ExecuteCommand(ctx, runCmd, plugin.ExecuteCommandEnvs(envs))
+
 		var cronJob map[string]interface{}
 		err := json.Unmarshal([]byte(out.Stdout), &cronJob)
 		if err != nil {
@@ -192,19 +205,6 @@ func createJobNameSelect(fileList []api.OptionItem, initialOption *api.OptionIte
 	}
 }
 
-type Arg struct {
-	Flag        string `json:"flag"`
-	Description string `json:"description"`
-	Type        string `json:"type"`
-	Default     string `json:"default"`
-	Values      []string `json:"values,omitempty"`
-}
-
-type Job struct {
-	Name      string `json:"name"`
-	Namespace string `json:"namespace"`
-	Args      []Arg  `json:"args"`
-}
 
 func getKubeconfigEnvs(ctx context.Context, kubeconfig []byte) map[string]string {
 	// Kubernetes client setup
