@@ -95,8 +95,13 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 	// Parse the action and value from the command
 	action, value := parseCommand(in.Command)
 
-    sessionID := ctx.Value("sessionID").(string) // Retrieve session ID from context
-
+	sessionID, ok := ctx.Value("sessionID").(string)
+    if !ok {
+        // sessionID is not found in the context, handle accordingly
+        return executor.ExecuteOutput{
+            Message: api.NewCodeBlockMessage("Error: No session ID found in context.", true),
+        }, nil
+    }
 	// Initialize session state if not already present
 	if _, ok := e.state[sessionID]; !ok {
 		e.state[sessionID] = make(map[string]string)
