@@ -121,7 +121,7 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 	sessionID, ok = ctx.Value("sessionID").(string)
     if ok {
 		return executor.ExecuteOutput{
-			Message: api.NewCodeBlockMessage(msg, true),
+			Message: api.NewCodeBlockMessage(fmt.Sprintf("session id is %s",sessionID), true),
 		}, nil
 	}
 
