@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	go_plugin "github.com/hashicorp/go-plugin"
 	"github.com/kubeshop/botkube/pkg/api"
 	"github.com/kubeshop/botkube/pkg/api/executor"
@@ -94,7 +95,7 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 	// Parse the action and value from the command
 	action, value := parseCommand(in.Command)
 
-	sessionID := "default_session" // Replace with an actual identifier if available
+	sessionID := uuid.New().String()
 
 	// Initialize session state if not already present
 	if _, ok := e.state[sessionID]; !ok {
