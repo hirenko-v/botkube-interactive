@@ -95,14 +95,15 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 	// Parse the action and value from the command
 	action, value := parseCommand(in.Command)
 
-	sessionID, ok := ctx.Value("sessionID").(string)
-    if ok {
-		// Initialize session state if not already present
-		if _, ok := e.state[sessionID]; !ok {
-			e.state[sessionID] = make(map[string]string)
-		}
-    }
-
+	// sessionID, ok := ctx.Value("sessionID").(string)
+    // if !ok {
+	// 	// Initialize session state if not already present
+	// 	sessionID = "empty"
+    // }
+	sessionID := "empty"
+	if _, ok := e.state[sessionID]; !ok {
+		e.state[sessionID] = make(map[string]string)
+	}
 	jobs := getBotkubeJobs(ctx, envs)
 
 	switch action {
