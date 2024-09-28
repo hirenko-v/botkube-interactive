@@ -95,7 +95,7 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 	// Parse the action and value from the command
 	action, value := parseCommand(in.Command)
 
-	sessionID := uuid.New().String()
+    sessionID := ctx.Value("sessionID").(string) // Retrieve session ID from context
 
 	// Initialize session state if not already present
 	if _, ok := e.state[sessionID]; !ok {
@@ -163,7 +163,7 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 	}
 
 	if strings.TrimSpace(in.Command) == pluginName {
-		return initialMessages(jobs), nil
+		return initialMessages(ctx, jobs), nil
 	}
 
 	msg := fmt.Sprintf("Plain command: %s", in.Command)
@@ -247,8 +247,9 @@ func getBotkubeJobs(ctx context.Context, envs map[string]string) ([]Job) {
 	return jobList
 }
 
-func initialMessages(jobs []Job) executor.ExecuteOutput {
-
+func initialMessages(ctx context.Context, jobs []Job) executor.ExecuteOutput {
+    sessionID := uuid.New().String()
+    ctx = context.WithValue(ctx, "sessionID", sessionID)
 	var jobList []api.OptionItem
 	for _, job := range jobs {
 		jobList = append(jobList, api.OptionItem{
