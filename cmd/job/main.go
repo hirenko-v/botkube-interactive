@@ -116,24 +116,19 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 
 	// Parse the action and value from the command
 	action, value := parseCommand(in.Command)
-
-	sessionID, ok := ctx.Value("sessionID").(string)
+	sessionID := "default_session" // Replace with an actual identifier if available
+	var ok bool
+	sessionID, ok = ctx.Value("sessionID").(string)
     if ok {
 		return executor.ExecuteOutput{
-			Message: api.NewCodeBlockMessage(fmt.Sprintf("Session ID is %s", sessionID), true),
+			Message: api.NewCodeBlockMessage(msg, true),
 		}, nil
-		// Initialize session state if not already present
-		// if _, ok := e.state[sessionID]; !ok {
-		// 	e.state[sessionID] = make(map[string]string)
-		// }    
 	}
 
-	// sessionID := "default_session" // Replace with an actual identifier if available
-
-	// Initialize session state if not already present
-		// if _, ok := e.state[sessionID]; !ok {
-		// 	e.state[sessionID] = make(map[string]string)
-		// } 
+// Initialize session state if not already present
+	if _, ok = e.state[sessionID]; !ok {
+		e.state[sessionID] = make(map[string]string)
+	} 
 	switch action {
 	case "select_first":
 		if e.state[sessionID]["first"] != value {
