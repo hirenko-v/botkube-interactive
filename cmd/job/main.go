@@ -250,7 +250,7 @@ func getBotkubeJobs(ctx context.Context, envs map[string]string) ([]Job) {
 
 func initialMessages(ctx context.Context, jobs []Job) executor.ExecuteOutput {
     sessionID := uuid.New().String()
-    ctx = context.WithValue(ctx, "sessionID", sessionID)
+    context.WithValue(ctx, "sessionID", sessionID)
 	var jobList []api.OptionItem
 	for _, job := range jobs {
 		jobList = append(jobList, api.OptionItem{
