@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	go_plugin "github.com/hashicorp/go-plugin"
 	"github.com/kubeshop/botkube/pkg/api"
 	"github.com/kubeshop/botkube/pkg/api/executor"
@@ -51,7 +52,6 @@ type CronJobs struct {
 type CronJobsList struct {
     Items []CronJobs `json:"items"`
 }
-
 type Arg struct {
 	Flag        string `json:"flag"`
 	Description string `json:"description"`
@@ -90,20 +90,44 @@ func (MsgExecutor) Metadata(context.Context) (api.MetadataOutput, error) {
 
 // Execute returns a given command as a response.
 func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (executor.ExecuteOutput, error) {
-	envs := getKubeconfigEnvs(ctx, in.Context.KubeConfig)
+
+	// Kubernetes client setup
+	kubeConfigPath, deleteFn, err := plugin.PersistKubeConfig(ctx, in.Context.KubeConfig)
+	if err != nil {
+		log.Fatalf("Error writing kubeconfig file: %v", err)
+	}
+	defer func() {
+		if deleteErr := deleteFn(ctx); deleteErr != nil {
+			fmt.Fprintf(os.Stderr, "failed to delete kubeconfig file %s: %v", kubeConfigPath, deleteErr)
+		}
+	}()
+	envs := map[string]string{
+		"KUBECONFIG": kubeConfigPath,
+	}
+	if err != nil {
+		log.Fatalf("Error creating Kubernetes client: %v", err)
+	}
+
+	if !in.Context.IsInteractivitySupported {
+		return executor.ExecuteOutput{
+			Message: api.NewCodeBlockMessage("Interactivity for this platform is not supported", true),
+		}, nil
+	}
+
 	// Parse the action and value from the command
 	action, value := parseCommand(in.Command)
 
-	// sessionID, ok := ctx.Value("sessionID").(string)
-    // if !ok {
-	// 	// Initialize session state if not already present
-	// 	sessionID = "empty"
-    // }
-	sessionID := "empty"
-	if _, ok := e.state[sessionID]; !ok {
-		e.state[sessionID] = make(map[string]string)
+	sessionID, ok := ctx.Value("sessionID").(string)
+    if ok {
+		// Initialize session state if not already present
+		if _, ok := e.state[sessionID]; !ok {
+			e.state[sessionID] = make(map[string]string)
+		}    
 	}
-	jobs := getBotkubeJobs(ctx, envs)
+
+	// sessionID := "default_session" // Replace with an actual identifier if available
+
+	// Initialize session state if not already present
 
 	switch action {
 	case "select_first":
@@ -115,13 +139,13 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 
 		// Store the selection from the first dropdown
 		e.state[sessionID]["first"] = value
-		return showBothSelects(jobs, e.state[sessionID]), nil
+		return showBothSelects(ctx, envs, e.state[sessionID]), nil
 
 	case "select_dynamic":
 		// Store dynamic dropdown selections (flag is passed in the command)
 		flag := strings.Fields(value)[0]
 		e.state[sessionID][flag] = strings.TrimPrefix(value, flag+" ")
-		return showBothSelects(jobs, e.state[sessionID]), nil
+		return showBothSelects(ctx, envs, e.state[sessionID]), nil
 
 	case "run":
 		fields := strings.Fields(value)
@@ -130,7 +154,6 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 		filePath := fmt.Sprintf("/tmp/%s.json",jobName)
 		runCmd := fmt.Sprintf("kubectl create job --from=cronjob/%s -n %s %s --dry-run -ojson", fields[0], fields[1], jobName)
 		out, _ := plugin.ExecuteCommand(ctx, runCmd, plugin.ExecuteCommandEnvs(envs))
-
 		var cronJob map[string]interface{}
 		err := json.Unmarshal([]byte(out.Stdout), &cronJob)
 		if err != nil {
@@ -164,7 +187,7 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 	}
 
 	if strings.TrimSpace(in.Command) == pluginName {
-		return initialMessages(ctx, jobs), nil
+		return initialMessages(ctx, envs), nil
 	}
 
 	msg := fmt.Sprintf("Plain command: %s", in.Command)
@@ -208,24 +231,6 @@ func createJobNameSelect(fileList []api.OptionItem, initialOption *api.OptionIte
 }
 
 
-func getKubeconfigEnvs(ctx context.Context, kubeconfig []byte) map[string]string {
-	// Kubernetes client setup
-	kubeConfigPath, deleteFn, err := plugin.PersistKubeConfig(ctx, kubeconfig)
-	if err != nil {
-		log.Fatalf("Error writing kubeconfig file: %v", err)
-	}
-	defer func() {
-		if deleteErr := deleteFn(ctx); deleteErr != nil {
-			fmt.Fprintf(os.Stderr, "failed to delete kubeconfig file %s: %v", kubeConfigPath, deleteErr)
-		}
-	}()
-	envs := map[string]string{
-		"KUBECONFIG": kubeConfigPath,
-	}
-
-	return envs
-}
-
 func getBotkubeJobs(ctx context.Context, envs map[string]string) ([]Job) {
 	var jobList []Job
 
@@ -248,10 +253,11 @@ func getBotkubeJobs(ctx context.Context, envs map[string]string) ([]Job) {
 	return jobList
 }
 
-func initialMessages(ctx context.Context, jobs []Job) executor.ExecuteOutput {
-    // sessionID := uuid.New().String()
-    // context.WithValue(ctx, "sessionID", sessionID)
+func initialMessages(ctx context.Context, envs map[string]string) executor.ExecuteOutput {
+    sessionID := uuid.New().String()
+    context.WithValue(ctx, "sessionID", sessionID)
 	var jobList []api.OptionItem
+	jobs := getBotkubeJobs(ctx, envs)
 	for _, job := range jobs {
 		jobList = append(jobList, api.OptionItem{
 			Name:  job.Name,
@@ -282,8 +288,9 @@ func initialMessages(ctx context.Context, jobs []Job) executor.ExecuteOutput {
 }
 
 // showBothSelects dynamically generates dropdowns based on the selected options.
-func showBothSelects(jobs []Job, state map[string]string) executor.ExecuteOutput {
+func showBothSelects(ctx context.Context, envs map[string]string, state map[string]string) executor.ExecuteOutput {
 	var jobList []api.OptionItem
+	jobs := getBotkubeJobs(ctx, envs)
 	for _, job := range jobs {
 		jobList = append(jobList, api.OptionItem{
 			Name:  job.Name,
