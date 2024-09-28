@@ -96,16 +96,12 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 	action, value := parseCommand(in.Command)
 
 	sessionID, ok := ctx.Value("sessionID").(string)
-    if !ok {
-        // sessionID is not found in the context, handle accordingly
-        return executor.ExecuteOutput{
-            Message: api.NewCodeBlockMessage("Error: No session ID found in context.", true),
-        }, nil
+    if ok {
+		// Initialize session state if not already present
+		if _, ok := e.state[sessionID]; !ok {
+			e.state[sessionID] = make(map[string]string)
+		}
     }
-	// Initialize session state if not already present
-	if _, ok := e.state[sessionID]; !ok {
-		e.state[sessionID] = make(map[string]string)
-	}
 
 	jobs := getBotkubeJobs(ctx, envs)
 
