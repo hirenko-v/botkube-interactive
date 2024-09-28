@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	go_plugin "github.com/hashicorp/go-plugin"
 	"github.com/kubeshop/botkube/pkg/api"
 	"github.com/kubeshop/botkube/pkg/api/executor"
@@ -250,8 +249,8 @@ func getBotkubeJobs(ctx context.Context, envs map[string]string) ([]Job) {
 }
 
 func initialMessages(ctx context.Context, jobs []Job) executor.ExecuteOutput {
-    sessionID := uuid.New().String()
-    context.WithValue(ctx, "sessionID", sessionID)
+    // sessionID := uuid.New().String()
+    // context.WithValue(ctx, "sessionID", sessionID)
 	var jobList []api.OptionItem
 	for _, job := range jobs {
 		jobList = append(jobList, api.OptionItem{
