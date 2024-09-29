@@ -280,7 +280,7 @@ func initialMessages(ctx context.Context, envs map[string]string, e *MsgExecutor
 }
 
 // showBothSelects dynamically generates dropdowns based on the selected options.
-func showBothSelects(ctx context.Context, envs map[string]string, state map[string]string, sessionID) executor.ExecuteOutput {
+func showBothSelects(ctx context.Context, envs map[string]string, state map[string]string, sessionID string) executor.ExecuteOutput {
 	var jobList []api.OptionItem
 	jobs := getBotkubeJobs(ctx, envs)
 	for _, job := range jobs {
