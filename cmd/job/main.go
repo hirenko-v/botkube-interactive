@@ -165,13 +165,13 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 
 		// Store the selection from the first dropdown
 		e.state[e.sessionID]["first"] = value
-		return showBothSelects(ctx, envs, e.state[e.sessionID]), nil
+		return showBothSelects(ctx, envs, e.state[e.sessionID], details), nil
 
 	case "select_dynamic":
 		// Store dynamic dropdown selections (flag is passed in the command)
 		flag := strings.Fields(value)[0]
 		e.state[e.sessionID][flag] = strings.TrimPrefix(value, flag+" ")
-		return showBothSelects(ctx, envs, e.state[e.sessionID]), nil
+		return showBothSelects(ctx, envs, e.state[e.sessionID], details), nil
 
 	case "run":
 		fields := strings.Fields(value)
@@ -349,7 +349,7 @@ func initialMessages(ctx context.Context, envs map[string]string, e *MsgExecutor
 }
 
 // showBothSelects dynamically generates dropdowns based on the selected options.
-func showBothSelects(ctx context.Context, envs map[string]string, state map[string]string) executor.ExecuteOutput {
+func showBothSelects(ctx context.Context, envs map[string]string, state map[string]string, details stateDetails) executor.ExecuteOutput {
 	var jobList []api.OptionItem
 	jobs := getBotkubeJobs(ctx, envs)
 	for _, job := range jobs {
@@ -365,8 +365,8 @@ func showBothSelects(ctx context.Context, envs map[string]string, state map[stri
 	}
 
 	initialOption := &api.OptionItem{
-		Name:  state["first"],
-		Value: state["first"],
+		Name:  details.job,
+		Value: details.job,
 	}
 	selects := createJobNameSelect(jobList, initialOption, cmdPrefix("select_first"))
 
@@ -445,7 +445,7 @@ func showBothSelects(ctx context.Context, envs map[string]string, state map[stri
 
 	// If all selections are made, show the run button
 	if allSelectionsMade(state, jobArgs) {
-		code := buildFinalCommand(state, jobArgs, namespace)
+		code := buildFinalCommand(state, jobArgs, namespace, details)
 		sections = append(sections, api.Section{
 			Base: api.Base{
 				Body: api.Body{
@@ -481,29 +481,26 @@ func allSelectionsMade(state map[string]string, options []Arg) bool {
 }
 
 // Helper function to build the final command based on all selections
-func buildFinalCommand(state map[string]string, options []Arg, namespace string) string {
+func buildFinalCommand(state map[string]string, options []Arg, namespace string, details stateDetails) string {
 	var commandParts []string
 
 	// Add the first selection (e.g., job name)
-	if first, ok := state["first"]; ok {
-		commandParts = append(commandParts, first)
-		commandParts = append(commandParts, namespace)
-	}
+	commandParts = append(commandParts, details.job)
+	commandParts = append(commandParts, namespace)
 
 	// Add options in the same order as they appear in the script output
 	for _, option := range options {
 		// Construct the key as used in the state map
 		flagKey := fmt.Sprintf("%s-%s", state["first"], option.Flag)
-		if value, ok := state[flagKey]; ok && value != "" {
-			if option.Type == "bool" {
-				if strings.Fields(value)[1] == "true" {
-					value = strings.Fields(value)[0]
-				} else {
-					continue
-				}
+		value := details.params[flagKey]
+		if option.Type == "bool" {
+			if strings.Fields(value)[1] == "true" {
+				value = strings.Fields(value)[0]
+			} else {
+				continue
 			}
-			commandParts = append(commandParts, value)
 		}
+		commandParts = append(commandParts, value)
 	}
 
 	return fmt.Sprintf("job run %s", strings.Join(commandParts, " "))
