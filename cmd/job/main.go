@@ -92,7 +92,23 @@ func (MsgExecutor) Metadata(context.Context) (api.MetadataOutput, error) {
 // Execute returns a given command as a response.
 func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (executor.ExecuteOutput, error) {
 	slackState := in.Context.SlackState
+	// details := e.extractStateDetails(slackState)
     slackStateJSON, err := json.MarshalIndent(slackState, "", "  ")
+
+
+    // Open a file for writing, create it if it doesn't exist, and truncate it if it does
+    file, err := os.OpenFile("/tmp/out.json", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+    if err != nil {
+        log.Fatalf("Failed to open file: %s", err)
+    }
+    defer file.Close()
+
+    // Write the text to the file
+    _, err = file.WriteString(fmt.Sprintf("%s", slackStateJSON))
+    if err != nil {
+        log.Fatalf("Failed to write to file: %s", err)
+    }
+
     if err != nil {
 		return executor.ExecuteOutput{
 			Message: api.NewCodeBlockMessage(fmt.Sprintf("Failed to MarshalIndent %s", err), true),
@@ -144,13 +160,13 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 
 		// Store the selection from the first dropdown
 		e.state[e.sessionID]["first"] = value
-		return showBothSelects(ctx, envs, e.state[e.sessionID], slackStateJSON), nil
+		return showBothSelects(ctx, envs, e.state[e.sessionID]), nil
 
 	case "select_dynamic":
 		// Store dynamic dropdown selections (flag is passed in the command)
 		flag := strings.Fields(value)[0]
 		e.state[e.sessionID][flag] = strings.TrimPrefix(value, flag+" ")
-		return showBothSelects(ctx, envs, e.state[e.sessionID], slackStateJSON), nil
+		return showBothSelects(ctx, envs, e.state[e.sessionID]), nil
 
 	case "run":
 		fields := strings.Fields(value)
@@ -203,6 +219,33 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 
 }
 
+// type stateDetails struct {
+// 	job         string
+// }
+
+// func (e *MsgExecutor) extractStateDetails(state *slack.BlockActionStates) stateDetails {
+// 	if state == nil {
+// 		return stateDetails{}
+// 	}
+
+// 	details := stateDetails{}
+// 	for _, blocks := range state.Values {
+
+// 		for id, act := range blocks {
+// 			id = strings.TrimPrefix(id, pluginName)
+// 			id = strings.TrimSpace(id)
+// 			switch id {
+// 			case "select_first":
+// 				details.job = act.SelectedOption.Value
+// 			case "select_dynamic":
+
+
+// 			}
+			
+// 		}
+// 	}
+// 	return details
+// }
 
 // parseCommand parses the input command into action and value
 func parseCommand(cmd string) (action, value string) {
@@ -292,7 +335,7 @@ func initialMessages(ctx context.Context, envs map[string]string, e *MsgExecutor
 }
 
 // showBothSelects dynamically generates dropdowns based on the selected options.
-func showBothSelects(ctx context.Context, envs map[string]string, state map[string]string, slackStateJSON []byte) executor.ExecuteOutput {
+func showBothSelects(ctx context.Context, envs map[string]string, state map[string]string) executor.ExecuteOutput {
 	var jobList []api.OptionItem
 	jobs := getBotkubeJobs(ctx, envs)
 	for _, job := range jobs {
@@ -404,7 +447,7 @@ func showBothSelects(ctx context.Context, envs map[string]string, state map[stri
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: fmt.Sprintf("Please select the Job parameters for %s. Session ID is: %s", state["first"], slackStateJSON),
+				Plaintext: fmt.Sprintf("Please select the Job parameters for %s. Job is: %s", state["first"]),
 			},
 			Sections:          sections,
 			OnlyVisibleForYou: true,
