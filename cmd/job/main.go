@@ -492,15 +492,15 @@ func buildFinalCommand(state map[string]string, options []Arg, namespace string,
 	for _, option := range options {
 		// Construct the key as used in the state map
 		flagKey := fmt.Sprintf("%s-%s", state["first"], option.Flag)
-		value := details.params[flagKey]
+		part := fmt.Sprintf("%s %s",option.Flag, details.params[flagKey])
 		if option.Type == "bool" {
-			if strings.Fields(value)[1] == "true" {
-				value = strings.Fields(value)[0]
+			if strings.Fields(details.params[flagKey])[1] == "true" {
+				part = strings.Fields(details.params[flagKey])[0]
 			} else {
 				continue
 			}
 		}
-		commandParts = append(commandParts, value)
+		commandParts = append(commandParts, part)
 	}
 
 	return fmt.Sprintf("job run %s", strings.Join(commandParts, " "))
