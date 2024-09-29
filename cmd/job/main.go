@@ -99,14 +99,18 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
     // Open a file for writing, create it if it doesn't exist, and truncate it if it does
     file, err := os.OpenFile("/tmp/out.json", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
     if err != nil {
-        log.Fatalf("Failed to open file: %s", err)
+		return executor.ExecuteOutput{
+			Message: api.NewCodeBlockMessage(fmt.Sprintf("Failed to open %s", err), true),
+		}, nil
     }
     defer file.Close()
 
     // Write the text to the file
     _, err = file.WriteString(fmt.Sprintf("%s", slackStateJSON))
     if err != nil {
-        log.Fatalf("Failed to write to file: %s", err)
+		return executor.ExecuteOutput{
+			Message: api.NewCodeBlockMessage(fmt.Sprintf("Failed to write %s", err), true),
+		}, nil
     }
 
     if err != nil {
