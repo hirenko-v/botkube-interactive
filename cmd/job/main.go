@@ -238,13 +238,13 @@ func (e *MsgExecutor) extractStateDetails(state *slack.BlockActionStates) stateD
 	for _, blocks := range state.Values {
 
 		for id, act := range blocks {
-			id = strings.TrimPrefix(id, pluginName)
-			id = strings.Fields(id)[0]
-			switch id {
+			id_full := strings.TrimPrefix(id, pluginName)
+			id_cmd := strings.Fields(id_full)[0]
+			switch id_cmd {
 			case "select_first":
 				details.job = act.SelectedOption.Value
 			case "select_dynamic":
-				key := strings.Fields(id)[1]
+				key := strings.Fields(id_full)[1]
 				if act.Value != "" {
 					details.params[key] = act.Value
 				} else if act.SelectedOption.Value != "" {
