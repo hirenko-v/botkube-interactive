@@ -15,6 +15,7 @@ import (
 	"github.com/kubeshop/botkube/pkg/api"
 	"github.com/kubeshop/botkube/pkg/api/executor"
 	"github.com/kubeshop/botkube/pkg/plugin"
+	"github.com/slack-go/slack"
 )
 
 const (
@@ -92,8 +93,8 @@ func (MsgExecutor) Metadata(context.Context) (api.MetadataOutput, error) {
 // Execute returns a given command as a response.
 func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (executor.ExecuteOutput, error) {
 	slackState := in.Context.SlackState
-	// details := e.extractStateDetails(slackState)
-    slackStateJSON, err := json.MarshalIndent(slackState, "", "  ")
+	details := e.extractStateDetails(slackState)
+    // slackStateJSON, err := json.MarshalIndent(slackState, "", "  ")
 
 
     // Open a file for writing, create it if it doesn't exist, and truncate it if it does
@@ -106,7 +107,7 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
     defer file.Close()
 
     // Write the text to the file
-    _, err = file.WriteString(fmt.Sprintf("%s", slackStateJSON))
+    _, err = file.WriteString(fmt.Sprintf("%s", details))
     if err != nil {
 		return executor.ExecuteOutput{
 			Message: api.NewCodeBlockMessage(fmt.Sprintf("Failed to write %s", err), true),
@@ -223,33 +224,40 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 
 }
 
-// type stateDetails struct {
-// 	job         string
-// }
+type stateDetails struct {
+	job         string
+	params      map[string]string
+}
 
-// func (e *MsgExecutor) extractStateDetails(state *slack.BlockActionStates) stateDetails {
-// 	if state == nil {
-// 		return stateDetails{}
-// 	}
+func (e *MsgExecutor) extractStateDetails(state *slack.BlockActionStates) stateDetails {
+	if state == nil {
+		return stateDetails{}
+	}
 
-// 	details := stateDetails{}
-// 	for _, blocks := range state.Values {
+	details := stateDetails{}
+	for _, blocks := range state.Values {
 
-// 		for id, act := range blocks {
-// 			id = strings.TrimPrefix(id, pluginName)
-// 			id = strings.TrimSpace(id)
-// 			switch id {
-// 			case "select_first":
-// 				details.job = act.SelectedOption.Value
-// 			case "select_dynamic":
+		for id, act := range blocks {
+			id = strings.TrimPrefix(id, pluginName)
+			id = strings.Fields(id)[0]
+			switch id {
+			case "select_first":
+				details.job = act.SelectedOption.Value
+			case "select_dynamic":
+				key := strings.Fields(id)[1]
+				if act.Value != "" {
+					details.params[key] = act.Value
+				} else if act.SelectedOption.Value != "" {
+					details.params[key] = act.SelectedOption.Value
+				}
 
 
-// 			}
+			}
 			
-// 		}
-// 	}
-// 	return details
-// }
+		}
+	}
+	return details
+}
 
 // parseCommand parses the input command into action and value
 func parseCommand(cmd string) (action, value string) {
