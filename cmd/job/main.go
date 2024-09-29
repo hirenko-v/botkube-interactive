@@ -30,6 +30,7 @@ var version = "dev"
 // MsgExecutor implements the Botkube executor plugin interface.
 type MsgExecutor struct {
 	state map[string]map[string]string // State to keep track of selections
+	sessionID string
 }
 
 // JSON structure for the script output
@@ -116,36 +117,28 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 
 	// Parse the action and value from the command
 	action, value := parseCommand(in.Command)
-	sessionID := "default_session" // Replace with an actual identifier if available
-	var ok bool
-	sessionID, ok = ctx.Value("sessionID").(string)
-    if ok {
-		return executor.ExecuteOutput{
-			Message: api.NewCodeBlockMessage(fmt.Sprintf("session id is %s",sessionID), true),
-		}, nil
-	}
 
 // Initialize session state if not already present
-	if _, ok = e.state[sessionID]; !ok {
-		e.state[sessionID] = make(map[string]string)
+	if _, ok := e.state[e.sessionID]; !ok {
+		e.state[e.sessionID] = make(map[string]string)
 	} 
 	switch action {
 	case "select_first":
-		if e.state[sessionID]["first"] != value {
-			for key := range e.state[sessionID] {
-				delete(e.state[sessionID], key)
+		if e.state[e.sessionID]["first"] != value {
+			for key := range e.state[e.sessionID] {
+				delete(e.state[e.sessionID], key)
 			}
 		}
 
 		// Store the selection from the first dropdown
-		e.state[sessionID]["first"] = value
-		return showBothSelects(ctx, envs, e.state[sessionID]), nil
+		e.state[e.sessionID]["first"] = value
+		return showBothSelects(ctx, envs, e.state[e.sessionID]), nil
 
 	case "select_dynamic":
 		// Store dynamic dropdown selections (flag is passed in the command)
 		flag := strings.Fields(value)[0]
-		e.state[sessionID][flag] = strings.TrimPrefix(value, flag+" ")
-		return showBothSelects(ctx, envs, e.state[sessionID]), nil
+		e.state[e.sessionID][flag] = strings.TrimPrefix(value, flag+" ")
+		return showBothSelects(ctx, envs, e.state[e.sessionID]), nil
 
 	case "run":
 		fields := strings.Fields(value)
@@ -254,8 +247,6 @@ func getBotkubeJobs(ctx context.Context, envs map[string]string) ([]Job) {
 }
 
 func initialMessages(ctx context.Context, envs map[string]string) executor.ExecuteOutput {
-    sessionID := uuid.New().String()
-    context.WithValue(ctx, "sessionID", sessionID)
 	var jobList []api.OptionItem
 	jobs := getBotkubeJobs(ctx, envs)
 	for _, job := range jobs {
@@ -460,6 +451,7 @@ func main() {
 		pluginName: &executor.Plugin{
 			Executor: &MsgExecutor{
 				state: make(map[string]map[string]string),
+				sessionID : uuid.New().String(),
 			},
 		},
 	})
