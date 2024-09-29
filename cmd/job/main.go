@@ -243,7 +243,7 @@ func (e *MsgExecutor) extractStateDetails(state *slack.BlockActionStates) stateD
 			switch id_cmd {
 			case "select_first":
 				details.job = act.SelectedOption.Value
-			case "select_dynamic":
+			case "select_dynamics":
 				key := strings.Fields(id_full)[1]
 				if act.Value != "" {
 					details.params[key] = act.Value
