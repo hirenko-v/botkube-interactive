@@ -180,7 +180,7 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 	}
 
 	if strings.TrimSpace(in.Command) == pluginName {
-		return initialMessages(ctx, envs), nil
+		return initialMessages(ctx, envs, e), nil
 	}
 
 	msg := fmt.Sprintf("Plain command: %s", in.Command)
@@ -246,7 +246,8 @@ func getBotkubeJobs(ctx context.Context, envs map[string]string) ([]Job) {
 	return jobList
 }
 
-func initialMessages(ctx context.Context, envs map[string]string) executor.ExecuteOutput {
+func initialMessages(ctx context.Context, envs map[string]string, e *MsgExecutor) executor.ExecuteOutput {
+	e.sessionID = uuid.New().String()
 	var jobList []api.OptionItem
 	jobs := getBotkubeJobs(ctx, envs)
 	for _, job := range jobs {
