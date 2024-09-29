@@ -132,13 +132,13 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 
 		// Store the selection from the first dropdown
 		e.state[e.sessionID]["first"] = value
-		return showBothSelects(ctx, envs, e.state[e.sessionID]), nil
+		return showBothSelects(ctx, envs, e.state[e.sessionID], e.sessionID), nil
 
 	case "select_dynamic":
 		// Store dynamic dropdown selections (flag is passed in the command)
 		flag := strings.Fields(value)[0]
 		e.state[e.sessionID][flag] = strings.TrimPrefix(value, flag+" ")
-		return showBothSelects(ctx, envs, e.state[e.sessionID]), nil
+		return showBothSelects(ctx, envs, e.state[e.sessionID], e.sessionID), nil
 
 	case "run":
 		fields := strings.Fields(value)
@@ -280,7 +280,7 @@ func initialMessages(ctx context.Context, envs map[string]string, e *MsgExecutor
 }
 
 // showBothSelects dynamically generates dropdowns based on the selected options.
-func showBothSelects(ctx context.Context, envs map[string]string, state map[string]string) executor.ExecuteOutput {
+func showBothSelects(ctx context.Context, envs map[string]string, state map[string]string, sessionID) executor.ExecuteOutput {
 	var jobList []api.OptionItem
 	jobs := getBotkubeJobs(ctx, envs)
 	for _, job := range jobs {
@@ -392,7 +392,7 @@ func showBothSelects(ctx context.Context, envs map[string]string, state map[stri
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: fmt.Sprintf("Please select the Job parameters for %s", state["first"] ),
+				Plaintext: fmt.Sprintf("Please select the Job parameters for %s. Session ID is: %s", state["first"], sessionID),
 			},
 			Sections:          sections,
 			OnlyVisibleForYou: true,
