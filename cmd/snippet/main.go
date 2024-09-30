@@ -206,8 +206,8 @@ func (SnippetExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (e
 	if err != nil {
 		return executor.ExecuteOutput{}, err
 	}
-	channelID := strings.Split(in.Context.Message.URL, "/")[4]
-	channelID = cfg.ChannelID
+	// channelID := strings.Split(in.Context.Message.URL, "/")[4]
+	channelID := cfg.ChannelID
 
 	botToken, err := getBotToken()
 	// Step 1: Execute the command
