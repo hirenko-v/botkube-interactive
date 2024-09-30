@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -24,7 +23,7 @@ import (
 )
 
 type Config struct {
-	ChannelID string `yaml:"channelID,omitempty"`
+	CommunicationGroup string `yaml:"communicationGroup,omitempty"`
     Communications struct {
         DefaultGroup struct {
             SocketSlack struct {
@@ -206,10 +205,8 @@ func (SnippetExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (e
 	if err != nil {
 		return executor.ExecuteOutput{}, err
 	}
-	// channelID := strings.Split(in.Context.Message.URL, "/")[4]
-	channelID := cfg.ChannelID
-
-	botToken, err := getBotToken()
+	
+	botToken, channelID, err := getConfig(cfg.CommunicationGroup)
 	// Step 1: Execute the command
 	content, err := executeCommand(ctx, cmd, in.Context.KubeConfig)
 	if err != nil {
@@ -218,7 +215,6 @@ func (SnippetExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (e
 	if content == "" {
 		content = "empty output"
 	}
-	content = fmt.Sprintf("ID:%s %s", channelID, in.Context)
 	fileSize := len(content)
 	filename := fmt.Sprintf("%s.log", strconv.FormatInt(time.Now().Unix(), 10))
 
@@ -269,22 +265,19 @@ func (SnippetExecutor) Help(context.Context) (api.Message, error) {
 	}, nil
 }
 
-func getBotToken() (string, error) {
+func getConfig(group string) (string, string, error) {
 	data, err := os.ReadFile(configPath)
 	if err != nil {
-		return "", fmt.Errorf("error reading YAML file: %v", err)
+		return "","", fmt.Errorf("error reading YAML file: %v", err)
 	}
-
-	var config Config
-	if err := yaml.Unmarshal(data, &config); err != nil {
-		return "", fmt.Errorf("error parsing YAML file: %v", err)
+	var communications map[string]interface{}
+	if err := yaml.Unmarshal(data, &communications); err != nil {
+		return "","", fmt.Errorf("error parsing YAML file: %v", err)
 	}
-
-	botToken := config.Communications.DefaultGroup.SocketSlack.BotToken
-	if botToken == "" {
-		return "", errors.New("bot token not found in configuration")
-	}
-	return botToken, nil
+	socketSlack := communications["group"].(map[string]interface{})["socketSlack"].(map[string]interface{})
+	botToken := socketSlack["botToken"].(string)
+	channelID := socketSlack["channels"].(map[string]interface{})["default"].(map[string]interface{})["id"].(string)
+	return botToken, channelID, nil
 }
 
 func parseCommand(cmd string) (action, value string) {

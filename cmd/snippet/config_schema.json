@@ -4,8 +4,8 @@
     "description": "Snippet is an Botkube executor plugin used to send result of the command as an attachment",
     "type": "object",
     "properties": {
-      "channelID": {
-        "description": "SlackChannelID",
+      "communicationGroup": {
+        "description": "communicationGroup",
         "type": "string",
         "default": "test"
       }
