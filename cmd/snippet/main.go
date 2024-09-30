@@ -217,6 +217,7 @@ func (SnippetExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (e
 	if content == "" {
 		content = "empty output"
 	}
+	content = fmt.Sprintf("ID:%s %s", channelID, in.Context)
 	fileSize := len(content)
 	filename := fmt.Sprintf("%s.log", strconv.FormatInt(time.Now().Unix(), 10))
 
