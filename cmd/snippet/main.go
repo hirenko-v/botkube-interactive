@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -24,6 +25,21 @@ import (
 
 type Config struct {
 	CommunicationGroup string `yaml:"communicationGroup,omitempty"`
+	Communications map[string]struct {
+		SocketSlack struct {
+			AppToken string `yaml:"appToken"`
+			BotToken string `yaml:"botToken"`
+			Enabled  bool   `yaml:"enabled"`
+			Channels  map[string]struct {
+				Name     string   `yaml:"name"`
+				ID       string   `yaml:"id"`
+				Bindings struct {
+					Executors []string `yaml:"executors"`
+					Sources   []string `yaml:"sources"`
+				} `yaml:"bindings"`
+			} `yaml:"channels"`
+		} `yaml:"socketSlack"`
+	} `yaml:"communications"`
 }
 
 const (
@@ -263,13 +279,17 @@ func getConfig(group string) (string, string, error) {
 	if err != nil {
 		return "","", fmt.Errorf("error reading YAML file: %v", err)
 	}
-	var communications map[string]interface{}
-	if err := yaml.Unmarshal(data, &communications); err != nil {
+	var config Config
+	if err := yaml.Unmarshal(data, &config); err != nil {
 		return "","", fmt.Errorf("error parsing YAML file: %v", err)
 	}
-	socketSlack := communications["communications"].(map[string]interface{})[group].(map[string]interface{})["socketSlack"].(map[string]interface{})
-	botToken := socketSlack["botToken"].(string)
-	channelID := socketSlack["channels"].(map[string]interface{})["default"].(map[string]interface{})["id"].(string)
+	socketSlack, exists := config.Communications[group]
+	if !exists {
+		log.Fatalf("group %s not found", group)
+	}
+	
+	botToken := socketSlack.SocketSlack.BotToken
+	channelID := socketSlack.SocketSlack.Channels["default"].ID
 	return botToken, channelID, nil
 }
 
