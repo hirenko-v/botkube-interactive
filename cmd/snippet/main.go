@@ -24,13 +24,6 @@ import (
 
 type Config struct {
 	CommunicationGroup string `yaml:"communicationGroup,omitempty"`
-    Communications struct {
-        DefaultGroup struct {
-            SocketSlack struct {
-                BotToken string `yaml:"botToken"`
-            } `yaml:"socketSlack"`
-        } `yaml:"default-group"`
-    } `yaml:"communications"`
 }
 
 const (
@@ -274,7 +267,7 @@ func getConfig(group string) (string, string, error) {
 	if err := yaml.Unmarshal(data, &communications); err != nil {
 		return "","", fmt.Errorf("error parsing YAML file: %v", err)
 	}
-	socketSlack := communications[group].(map[string]interface{})["socketSlack"].(map[string]interface{})
+	socketSlack := communications["communications"].(map[string]interface{})[group].(map[string]interface{})["socketSlack"].(map[string]interface{})
 	botToken := socketSlack["botToken"].(string)
 	channelID := socketSlack["channels"].(map[string]interface{})["default"].(map[string]interface{})["id"].(string)
 	return botToken, channelID, nil
