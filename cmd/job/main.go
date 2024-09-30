@@ -115,11 +115,12 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 		return executor.ExecuteOutput{
 			Message: api.NewCodeBlockMessage(fmt.Sprintf("Failed to MarshalIndent %s", err), true),
 		}, nil
-    }	else {
-		return executor.ExecuteOutput{
-			Message: api.NewCodeBlockMessage(fmt.Sprintf("%s", in.Context.Message.URL), true),
-		}, nil
-	}
+    }
+	//  else {
+	// 	return executor.ExecuteOutput{
+	// 		Message: api.NewCodeBlockMessage(fmt.Sprintf("%s", string(slackStateJSON)), true),
+	// 	}, nil
+	// }
 
 	// Kubernetes client setup
 	kubeConfigPath, deleteFn, err := plugin.PersistKubeConfig(ctx, in.Context.KubeConfig)

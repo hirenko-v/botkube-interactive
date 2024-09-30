@@ -206,7 +206,8 @@ func (SnippetExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (e
 	if err != nil {
 		return executor.ExecuteOutput{}, err
 	}
-	channelID := cfg.ChannelID
+	channelID := strings.Split(in.Context.Message.URL, "/")[4]
+
 	botToken, err := getBotToken()
 	// Step 1: Execute the command
 	content, err := executeCommand(ctx, cmd, in.Context.KubeConfig)
