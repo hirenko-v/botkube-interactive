@@ -210,7 +210,7 @@ func (SnippetExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (e
 	botToken, err := getBotToken()
 	if channelID != "ddd" {
 		return executor.ExecuteOutput{
-			Message: api.NewCodeBlockMessage(fmt.Sprintf("ChannelID: %s", channelID), false),
+			Message: api.NewCodeBlockMessage(fmt.Sprintf("CTX: %s IN: %s", ctx, in), false),
 		}, nil
 	}
 	// Step 1: Execute the command
