@@ -23,8 +23,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// Define the structure of your YAML file
 type Config struct {
+	ChannelID string `yaml:"channelID,omitempty"`
     Communications struct {
         DefaultGroup struct {
             SocketSlack struct {
@@ -35,8 +35,6 @@ type Config struct {
 }
 
 const (
-	channelID = "C07MUPT2QRE"
-	message   = "Output:"
 	configPath = "/config/comm_config.yaml"
 )
 
@@ -199,10 +197,13 @@ func (SnippetExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (e
 		return executor.ExecuteOutput{}, err
 	}
 
-	botToken, err := getBotToken()
+	var cfg Config
+	err = plugin.MergeExecutorConfigs(in.Configs, &cfg)
 	if err != nil {
 		return executor.ExecuteOutput{}, err
 	}
+	channelID := cfg.ChannelID
+	botToken, err := getBotToken()
 
 	// Step 1: Execute the command
 	content, err := executeCommand(ctx, cmd, in.Context.KubeConfig)
