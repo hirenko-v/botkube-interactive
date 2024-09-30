@@ -7,7 +7,7 @@
       "channelID": {
         "description": "SlackChannelID",
         "type": "string",
-        "default": ""
+        "default": "test"
       }
     },
     "required": []
