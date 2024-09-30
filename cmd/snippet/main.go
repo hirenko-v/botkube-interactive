@@ -57,6 +57,7 @@ const description = "snippet"
 
 // version is set via ldflags by GoReleaser.
 var version = "dev"
+var configJSONSchema      string
 
 // SnippetExecutor implements the Botkube executor plugin interface.
 type SnippetExecutor struct{}
@@ -181,7 +182,9 @@ func (SnippetExecutor) Metadata(context.Context) (api.MetadataOutput, error) {
 			},
 		},
 		Version:     version,
-		Description: description,
+		JSONSchema: api.JSONSchema{
+			Value: configJSONSchema,
+		},
 	}, nil
 }
 

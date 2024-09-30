@@ -1,0 +1,15 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Snippet",
+    "description": "Snippet is an Botkube executor plugin used to send result of the command as an attachment",
+    "type": "object",
+    "properties": {
+      "channelID": {
+        "description": "SlackChannelID",
+        "type": "string",
+        "default": ""
+      }
+    },
+    "required": []
+  }
+  
