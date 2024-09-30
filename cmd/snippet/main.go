@@ -208,11 +208,6 @@ func (SnippetExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (e
 	}
 	channelID := cfg.ChannelID
 	botToken, err := getBotToken()
-	if channelID != "ddd" {
-		return executor.ExecuteOutput{
-			Message: api.NewCodeBlockMessage(fmt.Sprintf("CTX: %s IN: %s", ctx, in), false),
-		}, nil
-	}
 	// Step 1: Execute the command
 	content, err := executeCommand(ctx, cmd, in.Context.KubeConfig)
 	if err != nil {
