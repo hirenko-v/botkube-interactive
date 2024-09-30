@@ -195,7 +195,7 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 	}
 
 	if strings.TrimSpace(in.Command) == pluginName {
-		return initialMessages(ctx, envs, e), nil
+		return initialMessages(ctx, envs, e, in.Context.SlackState), nil
 	}
 
 	msg := fmt.Sprintf("Plain command: %s", in.Command)
@@ -297,7 +297,7 @@ func getBotkubeJobs(ctx context.Context, envs map[string]string) ([]Job) {
 	return jobList
 }
 
-func initialMessages(ctx context.Context, envs map[string]string, e *MsgExecutor) executor.ExecuteOutput {
+func initialMessages(ctx context.Context, envs map[string]string, e *MsgExecutor, slackState *slack.BlockActionStates) executor.ExecuteOutput {
 	var jobList []api.OptionItem
 	jobs := getBotkubeJobs(ctx, envs)
 	for _, job := range jobs {
@@ -316,7 +316,7 @@ func initialMessages(ctx context.Context, envs map[string]string, e *MsgExecutor
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: "Please select the Job name",
+				Plaintext: fmt.Sprintf("%s", slackState),
 			},
 			Sections: []api.Section{
 				{
