@@ -117,7 +117,7 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 		}, nil
     }	else {
 		return executor.ExecuteOutput{
-			Message: api.NewCodeBlockMessage(fmt.Sprintf("%s", in.Context.IncomingWebhook), true),
+			Message: api.NewCodeBlockMessage(fmt.Sprintf("%s", in.Context), true),
 		}, nil
 	}
 
