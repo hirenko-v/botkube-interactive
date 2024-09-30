@@ -402,6 +402,7 @@ func showBothSelects(ctx context.Context, envs map[string]string, state map[stri
 					// Check if there's an InitialOption and update the state if it’s not already set
 					if _, exists := state[flagKey]; !exists && option.Default != "" {
 						state[flagKey] = fmt.Sprintf("%s %s", option.Flag, option.Default)
+						details.params[flagKey] = fmt.Sprintf("%s %s", option.Flag, option.Default)
 					}
 
 					var initialOption *api.OptionItem
