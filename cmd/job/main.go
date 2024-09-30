@@ -115,12 +115,11 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 		return executor.ExecuteOutput{
 			Message: api.NewCodeBlockMessage(fmt.Sprintf("Failed to MarshalIndent %s", err), true),
 		}, nil
-    }
-	//  else {
-	// 	return executor.ExecuteOutput{
-	// 		Message: api.NewCodeBlockMessage(fmt.Sprintf("%s", string(slackStateJSON)), true),
-	// 	}, nil
-	// }
+    }	else {
+		return executor.ExecuteOutput{
+			Message: api.NewCodeBlockMessage(fmt.Sprintf("%s", in.Context.IncomingWebhook), true),
+		}, nil
+	}
 
 	// Kubernetes client setup
 	kubeConfigPath, deleteFn, err := plugin.PersistKubeConfig(ctx, in.Context.KubeConfig)
@@ -195,7 +194,7 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 	}
 
 	if strings.TrimSpace(in.Command) == pluginName {
-		return initialMessages(ctx, envs, e, in.Context.SlackState), nil
+		return initialMessages(ctx, envs, e), nil
 	}
 
 	msg := fmt.Sprintf("Plain command: %s", in.Command)
@@ -297,7 +296,7 @@ func getBotkubeJobs(ctx context.Context, envs map[string]string) ([]Job) {
 	return jobList
 }
 
-func initialMessages(ctx context.Context, envs map[string]string, e *MsgExecutor, slackState *slack.BlockActionStates) executor.ExecuteOutput {
+func initialMessages(ctx context.Context, envs map[string]string, e *MsgExecutor) executor.ExecuteOutput {
 	var jobList []api.OptionItem
 	jobs := getBotkubeJobs(ctx, envs)
 	for _, job := range jobs {
@@ -316,7 +315,7 @@ func initialMessages(ctx context.Context, envs map[string]string, e *MsgExecutor
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: fmt.Sprintf("%s", slackState),
+				Plaintext: "Please select the Job name",
 			},
 			Sections: []api.Section{
 				{
