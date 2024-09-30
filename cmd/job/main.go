@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	go_plugin "github.com/hashicorp/go-plugin"
 	"github.com/kubeshop/botkube/pkg/api"
 	"github.com/kubeshop/botkube/pkg/api/executor"
@@ -30,8 +29,6 @@ var version = "dev"
 
 // MsgExecutor implements the Botkube executor plugin interface.
 type MsgExecutor struct {
-	state map[string]map[string]string // State to keep track of selections
-	sessionID string
 }
 
 // JSON structure for the script output
@@ -151,27 +148,12 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 	// Parse the action and value from the command
 	action, value := parseCommand(in.Command)
 
-// Initialize session state if not already present
-	if _, ok := e.state[e.sessionID]; !ok {
-		e.state[e.sessionID] = make(map[string]string)
-	} 
 	switch action {
 	case "select_first":
-		if e.state[e.sessionID]["first"] != value {
-			for key := range e.state[e.sessionID] {
-				delete(e.state[e.sessionID], key)
-			}
-		}
-
-		// Store the selection from the first dropdown
-		e.state[e.sessionID]["first"] = value
-		return showBothSelects(ctx, envs, e.state[e.sessionID], details), nil
+		return showBothSelects(ctx, envs, details), nil
 
 	case "select_dynamic":
-		// Store dynamic dropdown selections (flag is passed in the command)
-		flag := strings.Fields(value)[0]
-		e.state[e.sessionID][flag] = strings.TrimPrefix(value, flag+" ")
-		return showBothSelects(ctx, envs, e.state[e.sessionID], details), nil
+		return showBothSelects(ctx, envs, details), nil
 
 	case "run":
 		fields := strings.Fields(value)
@@ -316,7 +298,6 @@ func getBotkubeJobs(ctx context.Context, envs map[string]string) ([]Job) {
 }
 
 func initialMessages(ctx context.Context, envs map[string]string, e *MsgExecutor) executor.ExecuteOutput {
-	e.sessionID = uuid.New().String()
 	var jobList []api.OptionItem
 	jobs := getBotkubeJobs(ctx, envs)
 	for _, job := range jobs {
@@ -349,7 +330,7 @@ func initialMessages(ctx context.Context, envs map[string]string, e *MsgExecutor
 }
 
 // showBothSelects dynamically generates dropdowns based on the selected options.
-func showBothSelects(ctx context.Context, envs map[string]string, state map[string]string, details stateDetails) executor.ExecuteOutput {
+func showBothSelects(ctx context.Context, envs map[string]string, details stateDetails) executor.ExecuteOutput {
 	var jobList []api.OptionItem
 	jobs := getBotkubeJobs(ctx, envs)
 	for _, job := range jobs {
@@ -379,12 +360,12 @@ func showBothSelects(ctx context.Context, envs map[string]string, state map[stri
 	var jobArgs []Arg
 	// Create multiple dropdowns based on the options in the script output
 	for _, job := range jobs {
-		if job.Name == state["first"] {
+		if job.Name == details.job {
 			namespace = job.Namespace
 			jobArgs = job.Args
 			for _, option := range job.Args {
 				// Construct the flag key for the state
-				flagKey := fmt.Sprintf("%s-%s", state["first"], option.Flag)
+				flagKey := fmt.Sprintf("%s-%s", details.job, option.Flag)
 
 				if option.Type == "bool" || option.Type == "dropdown" {
 
@@ -400,8 +381,7 @@ func showBothSelects(ctx context.Context, envs map[string]string, state map[stri
 
 
 					// Check if there's an InitialOption and update the state if it’s not already set
-					if _, exists := state[flagKey]; !exists && option.Default != "" {
-						state[flagKey] = fmt.Sprintf("%s %s", option.Flag, option.Default)
+					if _, exists := details.params[flagKey]; !exists && option.Default != "" {
 						details.params[flagKey] = fmt.Sprintf("%s %s", option.Flag, option.Default)
 					}
 
@@ -445,8 +425,8 @@ func showBothSelects(ctx context.Context, envs map[string]string, state map[stri
 	}
 
 	// If all selections are made, show the run button
-	if allSelectionsMade(state, jobArgs) {
-		code := buildFinalCommand(state, jobArgs, namespace, details)
+	if allSelectionsMade(details, jobArgs) {
+		code := buildFinalCommand(jobArgs, namespace, details)
 		sections = append(sections, api.Section{
 			Base: api.Base{
 				Body: api.Body{
@@ -462,7 +442,7 @@ func showBothSelects(ctx context.Context, envs map[string]string, state map[stri
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: fmt.Sprintf("Please select the Job parameters for %s. Job is: %s", state["first"]),
+				Plaintext: fmt.Sprintf("Please select the Job parameters for %s. Job is: %s", details.job),
 			},
 			Sections:          sections,
 			OnlyVisibleForYou: true,
@@ -472,9 +452,9 @@ func showBothSelects(ctx context.Context, envs map[string]string, state map[stri
 }
 
 // Helper function to check if all selections are made
-func allSelectionsMade(state map[string]string, options []Arg) bool {
+func allSelectionsMade(details stateDetails, options []Arg) bool {
 	for _, option := range options {
-		if state[fmt.Sprintf("%s-%s", state["first"], option.Flag)] == "" {
+		if details.params[fmt.Sprintf("%s-%s", details.job, option.Flag)] == "" {
 			return false
 		}
 	}
@@ -482,7 +462,7 @@ func allSelectionsMade(state map[string]string, options []Arg) bool {
 }
 
 // Helper function to build the final command based on all selections
-func buildFinalCommand(state map[string]string, options []Arg, namespace string, details stateDetails) string {
+func buildFinalCommand(options []Arg, namespace string, details stateDetails) string {
 	var commandParts []string
 
 	// Add the first selection (e.g., job name)
@@ -492,7 +472,7 @@ func buildFinalCommand(state map[string]string, options []Arg, namespace string,
 	// Add options in the same order as they appear in the script output
 	for _, option := range options {
 		// Construct the key as used in the state map
-		flagKey := fmt.Sprintf("%s-%s", state["first"], option.Flag)
+		flagKey := fmt.Sprintf("%s-%s", details.job, option.Flag)
 		part := fmt.Sprintf("%s %s",option.Flag, details.params[flagKey])
 		if option.Type == "bool" {
 			if strings.Fields(details.params[flagKey])[1] == "true" {
@@ -518,8 +498,6 @@ func main() {
 	executor.Serve(map[string]go_plugin.Plugin{
 		pluginName: &executor.Plugin{
 			Executor: &MsgExecutor{
-				state: make(map[string]map[string]string),
-				sessionID : uuid.New().String(),
 			},
 		},
 	})
