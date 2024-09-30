@@ -182,6 +182,7 @@ func (SnippetExecutor) Metadata(context.Context) (api.MetadataOutput, error) {
 			},
 		},
 		Version:     version,
+		Description:      description,
 		JSONSchema: api.JSONSchema{
 			Value: configJSONSchema,
 		},
