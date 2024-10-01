@@ -90,9 +90,25 @@ func (MsgExecutor) Metadata(context.Context) (api.MetadataOutput, error) {
 
 // Execute returns a given command as a response.
 func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (executor.ExecuteOutput, error) {
+
+	// Kubernetes client setup
+	kubeConfigPath, deleteFn, err := plugin.PersistKubeConfig(ctx, in.Context.KubeConfig)
+	if err != nil {
+		log.Fatalf("Error writing kubeconfig file: %v", err)
+	}
+	defer func() {
+		if deleteErr := deleteFn(ctx); deleteErr != nil {
+			fmt.Fprintf(os.Stderr, "failed to delete kubeconfig file %s: %v", kubeConfigPath, deleteErr)
+		}
+	}()
+	envs := map[string]string{
+		"KUBECONFIG": kubeConfigPath,
+	}
+	if err != nil {
+		log.Fatalf("Error creating Kubernetes client: %v", err)
+	}
 	slackState := in.Context.SlackState
 	details := e.extractStateDetails(slackState)
-	envs, _ := generateKubeconfigEnvs(ctx, in)
 
 	// Parse the action and value from the command
 	action, value := parseCommand(in.Command)
@@ -193,25 +209,6 @@ func (e *MsgExecutor) extractStateDetails(state *slack.BlockActionStates) stateD
 	return details
 }
 
-func generateKubeconfigEnvs(ctx context.Context, in executor.ExecuteInput) (map[string]string, error) {
-	// Kubernetes client setup
-	kubeConfigPath, deleteFn, err := plugin.PersistKubeConfig(ctx, in.Context.KubeConfig)
-	if err != nil {
-		log.Fatalf("Error writing kubeconfig file: %v", err)
-	}
-	defer func() {
-		if deleteErr := deleteFn(ctx); deleteErr != nil {
-			fmt.Fprintf(os.Stderr, "failed to delete kubeconfig file %s: %v", kubeConfigPath, deleteErr)
-		}
-	}()
-	envs := map[string]string{
-		"KUBECONFIG": kubeConfigPath,
-	}
-	if err != nil {
-		log.Fatalf("Error creating Kubernetes client: %v", err)
-	}
-	return envs, nil
-}
 
 // parseCommand parses the input command into action and value
 func parseCommand(cmd string) (action, value string) {
