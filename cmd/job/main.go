@@ -409,7 +409,7 @@ func showBothSelects(ctx context.Context, envs map[string]string, details stateD
 	return executor.ExecuteOutput{
 		Message: api.Message{
 			BaseBody: api.Body{
-				Plaintext: fmt.Sprintf("Please select the Job parameters for %s. Job is: %s", details.job),
+				Plaintext: fmt.Sprintf("Please select the Job parameters for %s", details.job),
 			},
 			Sections:          sections,
 			OnlyVisibleForYou: true,
