@@ -216,6 +216,7 @@ func (SnippetExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (e
 	}
 	
 	botToken, channelID, err := getConfig(cfg.CommunicationGroup)
+
 	// Step 1: Execute the command
 	content, err := executeCommand(ctx, cmd, in.Context.KubeConfig)
 	if err != nil {

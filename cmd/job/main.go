@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	go_plugin "github.com/hashicorp/go-plugin"
 	"github.com/kubeshop/botkube/pkg/api"
 	"github.com/kubeshop/botkube/pkg/api/executor"
@@ -91,59 +92,7 @@ func (MsgExecutor) Metadata(context.Context) (api.MetadataOutput, error) {
 func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (executor.ExecuteOutput, error) {
 	slackState := in.Context.SlackState
 	details := e.extractStateDetails(slackState)
-    // slackStateJSON, err := json.MarshalIndent(slackState, "", "  ")
-
-
-    // Open a file for writing, create it if it doesn't exist, and truncate it if it does
-    file, err := os.OpenFile("/tmp/out.json", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-    if err != nil {
-		return executor.ExecuteOutput{
-			Message: api.NewCodeBlockMessage(fmt.Sprintf("Failed to open %s", err), true),
-		}, nil
-    }
-    defer file.Close()
-
-    // Write the text to the file
-    _, err = file.WriteString(fmt.Sprintf("%s", details))
-    if err != nil {
-		return executor.ExecuteOutput{
-			Message: api.NewCodeBlockMessage(fmt.Sprintf("Failed to write %s", err), true),
-		}, nil
-    }
-
-    if err != nil {
-		return executor.ExecuteOutput{
-			Message: api.NewCodeBlockMessage(fmt.Sprintf("Failed to MarshalIndent %s", err), true),
-		}, nil
-    }
-	//  else {
-	// 	return executor.ExecuteOutput{
-	// 		Message: api.NewCodeBlockMessage(fmt.Sprintf("%s", string(slackStateJSON)), true),
-	// 	}, nil
-	// }
-
-	// Kubernetes client setup
-	kubeConfigPath, deleteFn, err := plugin.PersistKubeConfig(ctx, in.Context.KubeConfig)
-	if err != nil {
-		log.Fatalf("Error writing kubeconfig file: %v", err)
-	}
-	defer func() {
-		if deleteErr := deleteFn(ctx); deleteErr != nil {
-			fmt.Fprintf(os.Stderr, "failed to delete kubeconfig file %s: %v", kubeConfigPath, deleteErr)
-		}
-	}()
-	envs := map[string]string{
-		"KUBECONFIG": kubeConfigPath,
-	}
-	if err != nil {
-		log.Fatalf("Error creating Kubernetes client: %v", err)
-	}
-
-	if !in.Context.IsInteractivitySupported {
-		return executor.ExecuteOutput{
-			Message: api.NewCodeBlockMessage("Interactivity for this platform is not supported", true),
-		}, nil
-	}
+	envs, _ := generateKubeconfigEnvs(ctx, in)
 
 	// Parse the action and value from the command
 	action, value := parseCommand(in.Command)
@@ -159,7 +108,7 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 		fields := strings.Fields(value)
 		args := fields[2:]
 		jobName := fmt.Sprintf("%s-%s",fields[0], strconv.FormatInt(time.Now().Unix(), 10))
-		filePath := fmt.Sprintf("/tmp/%s.json",jobName)
+		filePath := fmt.Sprintf("/tmp/%s-%s.json",jobName, uuid.New())
 		runCmd := fmt.Sprintf("kubectl create job --from=cronjob/%s -n %s %s --dry-run -ojson", fields[0], fields[1], jobName)
 		out, _ := plugin.ExecuteCommand(ctx, runCmd, plugin.ExecuteCommandEnvs(envs))
 		var cronJob map[string]interface{}
@@ -189,6 +138,7 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 		}
 		createCmd := fmt.Sprintf("kubectl apply -f %s", filePath)
 		plugin.ExecuteCommand(ctx, createCmd, plugin.ExecuteCommandEnvs(envs))
+		defer os.RemoveAll(jobName)
 		return executor.ExecuteOutput{
 			Message: api.NewCodeBlockMessage(fmt.Sprintf("Job %s is started",jobName), true),
 		}, nil
@@ -241,6 +191,26 @@ func (e *MsgExecutor) extractStateDetails(state *slack.BlockActionStates) stateD
 		}
 	}
 	return details
+}
+
+func generateKubeconfigEnvs(ctx context.Context, in executor.ExecuteInput) (map[string]string, error) {
+	// Kubernetes client setup
+	kubeConfigPath, deleteFn, err := plugin.PersistKubeConfig(ctx, in.Context.KubeConfig)
+	if err != nil {
+		log.Fatalf("Error writing kubeconfig file: %v", err)
+	}
+	defer func() {
+		if deleteErr := deleteFn(ctx); deleteErr != nil {
+			fmt.Fprintf(os.Stderr, "failed to delete kubeconfig file %s: %v", kubeConfigPath, deleteErr)
+		}
+	}()
+	envs := map[string]string{
+		"KUBECONFIG": kubeConfigPath,
+	}
+	if err != nil {
+		log.Fatalf("Error creating Kubernetes client: %v", err)
+	}
+	return envs, nil
 }
 
 // parseCommand parses the input command into action and value
