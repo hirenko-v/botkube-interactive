@@ -138,7 +138,7 @@ func (e *MsgExecutor) Execute(ctx context.Context, in executor.ExecuteInput) (ex
 		}
 		createCmd := fmt.Sprintf("kubectl apply -f %s", filePath)
 		plugin.ExecuteCommand(ctx, createCmd, plugin.ExecuteCommandEnvs(envs))
-		defer os.RemoveAll(jobName)
+		defer os.RemoveAll(filePath)
 		return executor.ExecuteOutput{
 			Message: api.NewCodeBlockMessage(fmt.Sprintf("Job %s is started",jobName), true),
 		}, nil
