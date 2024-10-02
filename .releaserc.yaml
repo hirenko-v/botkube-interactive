@@ -20,9 +20,5 @@ plugins:
   - assets:
     - path: "./dist/executor_*"
     - path: "./plugins-index.yaml"
-- - "@semantic-release/git"
-  - assets:
-    - ./dist/executor_*
-    - ./plugins-index.yaml
-    message: 'release: publishing release ${nextRelease.version} for edealer chart'
-- "@semantic-release/release-notes-generator"
+releaseNotes:
+  template: "## Release {{version}}\n\n{{#each commits}}- {{this.message}}\n{{/each}}"
