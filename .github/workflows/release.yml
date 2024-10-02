@@ -61,7 +61,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release edit ${{ github.event.release.name }} \
-          --notes-file release.md \
-          ./dist/executor_* \
-          ./plugins-index.yaml
+          gh release edit ${{ github.event.release.name }} --notes-file release.md 
+          gh release upload ${{ github.event.release.name }} ./dist/executor_* ./plugins-index.yaml
