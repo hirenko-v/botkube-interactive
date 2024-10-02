@@ -1,0 +1,79 @@
+entries:
+    - name: snippet
+      type: executor
+      description: snippet
+      version: v0.0.0
+      urls:
+        - url: https://github.com/hirenko-v/botkube-interactive/releases/download/main/executor_snippet_darwin_amd64
+          checksum: b84edf636f50874269223e4273985f7f054cfdca11a31f65eec7a8280904bece
+          platform:
+            os: darwin
+            architecture: amd64
+          dependencies:
+            kubectl:
+                url: https://dl.k8s.io/release/v1.28.1/bin/darwin/amd64/kubectl
+        - url: https://github.com/hirenko-v/botkube-interactive/releases/download/main/executor_snippet_darwin_arm64
+          checksum: 79ccc9866ce48bca0ac6a4bb5b21d8d7f1ab76a730aa303808dce4981d6ef1dd
+          platform:
+            os: darwin
+            architecture: arm64
+          dependencies:
+            kubectl:
+                url: https://dl.k8s.io/release/v1.28.1/bin/darwin/arm64/kubectl
+        - url: https://github.com/hirenko-v/botkube-interactive/releases/download/main/executor_snippet_linux_amd64
+          checksum: 960e17c97fc974c08c2750d7046ba9040e174b4ca1035afff562006c95eb75d5
+          platform:
+            os: linux
+            architecture: amd64
+          dependencies:
+            kubectl:
+                url: https://dl.k8s.io/release/v1.28.1/bin/linux/amd64/kubectl
+        - url: https://github.com/hirenko-v/botkube-interactive/releases/download/main/executor_snippet_linux_arm64
+          checksum: 3441a21d6800ee3372a6cd31e2b74153df4cc13a88d048422b2a40731850470c
+          platform:
+            os: linux
+            architecture: arm64
+          dependencies:
+            kubectl:
+                url: https://dl.k8s.io/release/v1.28.1/bin/linux/arm64/kubectl
+      jsonSchema: {}
+      recommended: false
+    - name: job
+      type: executor
+      description: Run Job.
+      version: v0.0.0
+      urls:
+        - url: https://github.com/hirenko-v/botkube-interactive/releases/download/main/executor_job_darwin_amd64
+          checksum: 2507482e5b84a2c50c7dcae5bd720552fe290251ad26e32535894481c9ea6239
+          platform:
+            os: darwin
+            architecture: amd64
+          dependencies:
+            kubectl:
+                url: https://dl.k8s.io/release/v1.28.1/bin/darwin/amd64/kubectl
+        - url: https://github.com/hirenko-v/botkube-interactive/releases/download/main/executor_job_darwin_arm64
+          checksum: 9e488b97b89ddef6c262a2d817985d06bd9a216a7cec2923285506c3f35d837e
+          platform:
+            os: darwin
+            architecture: arm64
+          dependencies:
+            kubectl:
+                url: https://dl.k8s.io/release/v1.28.1/bin/darwin/arm64/kubectl
+        - url: https://github.com/hirenko-v/botkube-interactive/releases/download/main/executor_job_linux_amd64
+          checksum: bbccc0b782f6ccf3617b73c5dd23112546c5124229d6b7f128fcada6a3f50fe5
+          platform:
+            os: linux
+            architecture: amd64
+          dependencies:
+            kubectl:
+                url: https://dl.k8s.io/release/v1.28.1/bin/linux/amd64/kubectl
+        - url: https://github.com/hirenko-v/botkube-interactive/releases/download/main/executor_job_linux_arm64
+          checksum: c26bf9ccfc8c809baf6bb203e72c04686dced8a36de63d3f36a7431959c981a8
+          platform:
+            os: linux
+            architecture: arm64
+          dependencies:
+            kubectl:
+                url: https://dl.k8s.io/release/v1.28.1/bin/linux/arm64/kubectl
+      jsonSchema: {}
+      recommended: false
