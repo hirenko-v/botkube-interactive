@@ -42,8 +42,8 @@ jobs:
           node-version: "20.11.0"
 
       - name: Release
-        # env:
-        #   GITHUB_TOKEN: ${{ secrets.GIT_PERSONAL_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           npm install
           npx semantic-release
