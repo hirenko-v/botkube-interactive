@@ -17,6 +17,9 @@ plugins:
     - scope: no-release
       release: false
 - - "@semantic-release/github"
+  - assets:
+    - path: "./dist/executor_*"
+    - path: "./plugins-index.yaml"
 - - "@semantic-release/git"
   - assets:
     - ./dist/executor_*
