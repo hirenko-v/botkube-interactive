@@ -38,7 +38,9 @@ jobs:
       - name: Release
         # env:
         #   GITHUB_TOKEN: ${{ secrets.GIT_PERSONAL_TOKEN }}
-        run: npx semantic-release
+        run: |
+          npm install
+          npx semantic-release
 
       # - name: Release description
       #   env:
