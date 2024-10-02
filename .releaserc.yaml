@@ -1,0 +1,25 @@
+---
+branches:
+- main
+
+tagFormat: "${version}"
+
+plugins:
+- - "@semantic-release/commit-analyzer"
+  - preset: angular
+    releaseRules:
+    - message: "*major*"
+      release: major
+    - message: "*minor*"
+      release: minor
+    - message: "*"
+      release: patch
+    - scope: no-release
+      release: false
+- - "@semantic-release/github"
+- - "@semantic-release/git"
+  - assets:
+    - ./dist/executor_*
+    - ./plugins-index.yaml
+    message: 'release: publishing release ${nextRelease.version} for edealer chart'
+- "@semantic-release/release-notes-generator"

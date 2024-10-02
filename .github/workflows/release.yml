@@ -1,9 +1,9 @@
 name: Deploy Botkube plugins on GitHub Release
 
 on:
-  release:
-      types: 
-      - published
+  push:
+    branches:
+      - main
 
 jobs:
   release:
@@ -33,33 +33,42 @@ jobs:
         run: |
           make build-plugins
           make gen-plugin-index
-      - name: Release description
-        env:
-          PLUGIN_DOWNLOAD_URL_BASE_PATH: "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}"
-        run: |
-          cat << EOF > release.md
 
-          Botkube Plugins **${GITHUB_REF#refs/tags/}** version are now available! :rocket:
 
-          To use plugins from this release, configure Botkube with:
-          EOF
-          cat << 'EOF' >> release.md
+      - name: Release
+        # env:
+        #   GITHUB_TOKEN: ${{ secrets.GIT_PERSONAL_TOKEN }}
+        run: npx semantic-release
 
-          ```yaml
-          plugins:
-            repositories:
-          EOF
-          cat << EOF >> release.md
-              ${{ github.event.repository.name }}:
-                url: ${PLUGIN_DOWNLOAD_URL_BASE_PATH}/plugins-index.yaml
-          EOF
-          cat << 'EOF' >> release.md
-          ```
-          EOF
+      # - name: Release description
+      #   env:
+      #     PLUGIN_DOWNLOAD_URL_BASE_PATH: "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}"
+      #   run: |
+      #     cat << EOF > release.md
 
-      - name: Publish GitHub release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release edit ${{ github.event.release.name }} --notes-file release.md 
-          gh release upload ${{ github.event.release.name }} ./dist/executor_* ./plugins-index.yaml
+      #     Botkube Plugins **${GITHUB_REF#refs/tags/}** version are now available! :rocket:
+
+      #     To use plugins from this release, configure Botkube with:
+      #     EOF
+      #     cat << 'EOF' >> release.md
+
+      #     ```yaml
+      #     plugins:
+      #       repositories:
+      #     EOF
+      #     cat << EOF >> release.md
+      #         ${{ github.event.repository.name }}:
+      #           url: ${PLUGIN_DOWNLOAD_URL_BASE_PATH}/plugins-index.yaml
+      #     EOF
+      #     cat << 'EOF' >> release.md
+      #     ```
+      #     EOF
+
+      # - name: Publish GitHub release
+      #   env:
+      #     GH_TOKEN: ${{ github.token }}
+      #   run: |
+      #     gh release create "${GITHUB_REF#refs/tags/}" \
+      #     --notes-file release.md \
+      #     ./dist/executor_* \
+      #     ./plugins-index.yaml
